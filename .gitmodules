@@ -1,6 +1,0 @@
-[submodule "themes/hugo-profile"]
-	path = themes/hugo-profile
-	url = https://github.com/gurusabarish/hugo-profile.git
-[submodule "themes/kong-htop"]
-	path = themes/kong-htop
-	url = https://github.com/yezihack/kong-htop.git
