@@ -1,7 +1,7 @@
-baseurl = "https://ypvichi.github.io/iux-daily-blog/"
-title = "AI八点半"
+baseurl = "https://zhaohuabing.com"
+title = "Huabing Blog"
 theme = "hugo-theme-cleanwhite"
-languageCode = "zh-CN"
+languageCode = "en-us"
 preserveTaxonomyNames = true
 hasCJKLanguage = true
 
@@ -20,7 +20,7 @@ home = ["HTML", "RSS", "Algolia"]
 
 [params]
   header_image = "img/home-bg-jeep.jpg"
-  SEOTitle = "AI八点半 | iux daily Blog"
+  SEOTitle = "赵化冰的博客 | Zhaohuabing Blog"
   description = "赵化冰，程序员, 开源爱好者，生活探险家 | 这里是 赵化冰 的博客，与你一起发现更大的世界。"
   keyword = "赵化冰, zhaohuabing, Zhaohuabing, , 赵化冰的网络日志, 赵化冰的博客, Zhaohuabing Blog, 博客, 个人网站, 互联网, Web, 云原生, PaaS, Istio, Kubernetes, 微服务, Microservice"
   slogan = "路在脚下，心向远方"
@@ -44,9 +44,9 @@ home = ["HTML", "RSS", "Algolia"]
   # Sidebar settings
   sidebar_about_description = "Software Developer, Open Source Enthusiast and Life Adventurer"
   #sidebar_avatar = "img/avatar-zhaohuabing.jpg"      # use absolute URL, seeing it's used in both `/` and `/about/`
-  sidebar_avatar = "img/iux.png"      # use absolute URL, seeing it's used in both `/` and `/about/`
+  sidebar_avatar = "img/zhaohuabing.png"      # use absolute URL, seeing it's used in both `/` and `/about/`
 
-  featured_tags = false 
+  featured_tags = true 
   featured_condition_size = 1 
 
   # Baidu Analytics
@@ -71,7 +71,7 @@ home = ["HTML", "RSS", "Algolia"]
   reward = true 
   # reward_guide = "如果这篇文章对你有用,请随意打赏" 
 
-  friends = false
+  friends = true
   bookmarks = false
   about_me = true
 
@@ -85,19 +85,34 @@ home = ["HTML", "RSS", "Algolia"]
   #custom_js = ["js/lightbox.js", "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js", "js/main.js"]
 
   [params.social]
-  rss            = true 
-
+  rss            = true
+  
   [[params.friend_link]]
   title = "Linda的博客"
   href =  "https://zhaozhihan.com"
+
+  [[params.bookmark_link]]
+  title =  "Martin Fowler"
+  href =  "https://martinfowler.com"
+  [[params.bookmark_link]]
+  title = "ServiceMesher"
+  href =  "http://www.servicemesher.com"
+  [[params.bookmark_link]]
+  title =  "Pxhere"
+  href = "https://pxhere.com"
+  [[params.bookmark_link]]
+  title = "unsplash"
+  href = "https://unsplash.com"
   
   [[params.additional_menus]]
-  title =  "归档"
-  href =  "/iux-daily-blog/archive/"
+  title =  "ARCHIVE"
+  href =  "/archive/"
   [[params.additional_menus]]
-  title =  "笔记"
-  href =  "/iux-daily-blog/notes/"
+  title =  "NOTES"
+  href =  "/notes/"
   [[params.additional_menus]]
+  title =  "ABOUT"
+  href =  "/about/"
 
 [outputFormats.Algolia]
 baseName = "algolia"
