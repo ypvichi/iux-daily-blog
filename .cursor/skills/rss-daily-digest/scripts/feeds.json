@@ -1,5 +1,20 @@
 [
   {
+    "name": "AI科技",
+    "url": "https://quanwenrss.com/bloomberg/technology-ai",
+    "category": "papers"
+  },
+  {
+     "name": "财新网科技",
+     "url": "https://quanwenrss.com/caixin/technology",
+     "category": "papers"
+  },
+  {
+     "name": "爱范儿",
+     "url": "https://rss.aishort.top/?type=AppSolution",
+     "category": "papers"
+  },
+  {
     "name": "OpenAI Blog",
     "url": "https://openai.com/blog/rss.xml",
     "category": "company"
@@ -80,49 +95,9 @@
     "category": "community"
   },
   {
-    "name": "Product Hunt",
-    "url": "https://www.producthunt.com/feed",
-    "category": "community"
-  },
-  {
-    "name": "HelloGitHub",
-    "url": "https://hellogithub.com/rss",
-    "category": "community"
-  },
-  {
-    "name": "crewAI Releases",
-    "url": "https://github.com/crewAIInc/crewAI/releases.atom",
-    "category": "community"
-  },
-  {
-    "name": "Machine Learning Mastery",
-    "url": "https://machinelearningmastery.com/feed/",
-    "category": "newsletter"
-  },
-  {
-    "name": "Towards Data Science",
-    "url": "https://towardsdatascience.com/feed",
-    "category": "newsletter"
-  },
-  {
     "name": "InfoQ 中文",
     "url": "https://www.infoq.cn/feed",
     "category": "cn_media"
-  },
-  {
-    "name": "阮一峰周刊",
-    "url": "https://www.ruanyifeng.com/blog/atom.xml",
-    "category": "tech_general"
-  },
-  {
-    "name": "Kotlin Blog",
-    "url": "https://blog.jetbrains.com/kotlin/feed/",
-    "category": "tech_general"
-  },
-  {
-    "name": "Apple Newsroom",
-    "url": "https://www.apple.com/newsroom/rss-feed.rss",
-    "category": "tech_general"
   },
   {
     "name": "IEEE Spectrum AI",
@@ -133,15 +108,5 @@
     "name": "量子位",
     "url": "https://www.qbitai.com/feed",
     "category": "cn_media"
-  },
-  {
-    "name": "Ollama Blog",
-    "url": "https://ollama.com/blog/rss.xml",
-    "category": "ai-agent"
-  },
-  {
-    "name": "Sebastian Raschka",
-    "url": "https://magazine.sebastianraschka.com/feed",
-    "category": "newsletter"
   }
 ]

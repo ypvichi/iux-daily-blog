@@ -17,6 +17,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from html import escape as html_escape
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -606,9 +607,11 @@ def toml_single(s: str) -> str:
     return s.replace("'", "''")
 
 
-def escape_md_link_label(s: str) -> str:
-    """Escape [, ], \\ for use inside [...](url) link labels."""
-    return s.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+def external_link_anchor(href: str, text: str) -> str:
+    """Raw HTML anchor for Hugo MD: open in new tab, mitigate tab-nabbing."""
+    h = html_escape(href.strip(), quote=True)
+    t = html_escape(text, quote=False)
+    return f'<a href="{h}" target="_blank" rel="noopener noreferrer">{t}</a>'
 
 
 def _keyword_hits(blob: str, keywords: tuple[str, ...]) -> int:
@@ -743,9 +746,11 @@ def write_markdown(
             t = (e.get("title") or "(无标题)").strip()
             link = (e.get("link") or "").strip()
             if link:
-                lines.append(f"- {t}[↗]({link})")
+                lines.append(
+                    f"- {html_escape(t, quote=False)}{external_link_anchor(link, '↗')}"
+                )
             else:
-                lines.append(f"- {t}")
+                lines.append(f"- {html_escape(t, quote=False)}")
         lines.append("")
 
     lines.append("---")
@@ -755,11 +760,10 @@ def write_markdown(
         for e in buckets[cat]:
             etitle = (e.get("title") or "(无标题)").strip()
             link = (e.get("link") or "").strip()
-            label = escape_md_link_label(etitle)
             if link:
-                lines.append(f"## [{label}]({link})")
+                lines.append(f"## {external_link_anchor(link, etitle)}")
             else:
-                lines.append(f"## {etitle}")
+                lines.append(f"## {html_escape(etitle, quote=False)}")
             lines.append("")
             summ = (e.get("summary") or "").strip()
             if summ:
@@ -768,7 +772,7 @@ def write_markdown(
                 lines.append("")
             lines.append("相关链接：")
             if link:
-                lines.append(f"- [{link}]({link})")
+                lines.append(f"- {external_link_anchor(link, link)}")
             else:
                 lines.append("- （无链接）")
             lines.append("")
