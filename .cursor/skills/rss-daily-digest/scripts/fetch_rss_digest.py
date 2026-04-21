@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 Fetch multiple RSS/Atom feeds, keep entries whose published time falls on the
-target calendar day (Asia/Shanghai), write Hugo markdown to content/post/YYYY-MM-DD.md.
-Classifies into: 要闻/模型发布/开发生态/产品应用/技术与洞察/行业生态/前瞻与传闻/其他.
+target calendar day (Asia/Shanghai), write markdown to temp/YYYY-MM-DD/rss_articles.md.
 """
 
 from __future__ import annotations
@@ -11,13 +10,11 @@ import argparse
 import json
 import re
 import sys
-import textwrap
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from html import escape as html_escape
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -45,6 +42,28 @@ CATEGORIES: tuple[str, ...] = (
     "行业生态",
     "前瞻与传闻",
     "其他",
+)
+
+# 输出「类型」字段仅限以下七类（无「其他」）；仅依据标题归类，无明确信号时默认「要闻」。
+# 顺序与技能说明一致：模型发布 → … → 要闻。
+DISPLAY_TYPES: tuple[str, ...] = (
+    "模型发布",
+    "开发生态",
+    "技术与洞察",
+    "产品应用",
+    "行业生态",
+    "前瞻与传闻",
+    "要闻",
+)
+# 同分时优先归入更具体的类（与 DISPLAY_TYPES 列举顺序无关）。
+_DISPLAY_TYPE_PRIORITY: tuple[str, ...] = (
+    "模型发布",
+    "要闻",
+    "开发生态",
+    "产品应用",
+    "技术与洞察",
+    "行业生态",
+    "前瞻与传闻",
 )
 MAX_ITEMS_PER_CATEGORY = 10
 # 同分时优先归入更「具体」的类（与 CATEGORIES 顺序无关）。
@@ -602,16 +621,9 @@ def dedupe(entries: list[dict]) -> list[dict]:
     return out
 
 
-def toml_single(s: str) -> str:
-    """Escape for TOML single-quoted strings."""
-    return s.replace("'", "''")
-
-
-def external_link_anchor(href: str, text: str) -> str:
-    """Raw HTML anchor for Hugo MD: open in new tab, mitigate tab-nabbing."""
-    h = html_escape(href.strip(), quote=True)
-    t = html_escape(text, quote=False)
-    return f'<a href="{h}" target="_blank" rel="noopener noreferrer">{t}</a>'
+def _safe_text(s: str | None) -> str:
+    """Collapse line breaks/extra spaces so each field stays one line."""
+    return re.sub(r"\s+", " ", (s or "")).strip()
 
 
 def _keyword_hits(blob: str, keywords: tuple[str, ...]) -> int:
@@ -692,6 +704,57 @@ def classify_entry(entry: dict) -> str:
     return _best_category(scores)
 
 
+def classify_by_title(title: str | None) -> str:
+    """
+    仅根据标题归入 DISPLAY_TYPES 之一；与正文/摘要/链接无关。
+    无匹配关键词时默认为「要闻」。
+    """
+    raw = (title or "").strip()
+    if not raw or raw == "(无标题)":
+        return "要闻"
+    blob = raw.lower()
+
+    scores: dict[str, int] = {c: 0 for c in DISPLAY_TYPES}
+    scores["要闻"] = _keyword_hits(blob, _HEADLINE_KEYWORDS)
+    scores["模型发布"] = _keyword_hits(blob, _MODEL_KEYWORDS)
+    scores["开发生态"] = _keyword_hits(blob, _DEV_KEYWORDS)
+    scores["产品应用"] = _keyword_hits(blob, _PRODUCT_KEYWORDS)
+    scores["技术与洞察"] = _keyword_hits(blob, _TECH_INSIGHT_KEYWORDS)
+    scores["行业生态"] = _keyword_hits(blob, _INDUSTRY_KEYWORDS)
+    scores["前瞻与传闻"] = _keyword_hits(blob, _NEWS_KEYWORDS)
+
+    if re.search(r"(?<![a-z0-9])(?:hack|hacked|hacking|breach)(?![a-z0-9])", blob):
+        scores["前瞻与传闻"] += 4
+    if "existential" in blob:
+        scores["前瞻与传闻"] += 3
+    if "vercel" in blob and ("hack" in blob or "hacked" in blob or "breach" in blob):
+        scores["前瞻与传闻"] += 2
+
+    space = _keyword_hits(blob, _SPACE_KEYWORDS)
+    strong_tech = (
+        scores["模型发布"]
+        + scores["开发生态"]
+        + scores["技术与洞察"]
+        + scores["产品应用"]
+        + scores["行业生态"]
+        + scores["前瞻与传闻"]
+        + scores["要闻"]
+    )
+    if space >= 1 and strong_tech < 4:
+        return "要闻"
+
+    best = "要闻"
+    best_v = -1
+    for cat in _DISPLAY_TYPE_PRIORITY:
+        v = scores.get(cat, 0)
+        if v > best_v:
+            best = cat
+            best_v = v
+    if best_v <= 0:
+        return "要闻"
+    return best
+
+
 def bucket_by_category(entries: list[dict]) -> dict[str, list[dict]]:
     buckets: dict[str, list[dict]] = {c: [] for c in CATEGORIES}
     for e in entries:
@@ -717,77 +780,38 @@ def limit_entries_per_category(entries: list[dict], max_per_category: int) -> li
 
 def write_markdown(
     out_path: Path,
-    target: date,
     entries: list[dict],
 ) -> None:
-    title = f"AI早知道 【{target.isoformat()}】刊"
-    dt_str = f"{target.isoformat()}T08:30:00+08:00"
-    safe_title = toml_single(title)
-    lines = [
-        "+++",
-        f"date = '{dt_str}'",
-        "draft = true",
-        f"title = '{safe_title}'",
-        "+++",
-        "",
-        f"# {title}",
-        "",
-        "## 概览",
-        "",
-    ]
+    lines: list[str] = []
+    for i, e in enumerate(entries, start=1):
+        title = _safe_text(e.get("title")) or "(无标题)"
+        source = _safe_text(e.get("source")) or "(未知来源)"
+        link = _safe_text(e.get("link")) or "（无链接）"
+        published = e.get("published")
+        if isinstance(published, datetime):
+            published_str = published.astimezone(TZ_SH).strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            published_str = ""
+        summary = _safe_text(e.get("summary")) or "（无摘要）"
 
-    buckets = bucket_by_category(entries)
-    for cat in CATEGORIES:
-        group = buckets[cat]
-        if not group:
-            continue
-        lines.append(f"### {cat}")
-        for e in group:
-            t = (e.get("title") or "(无标题)").strip()
-            link = (e.get("link") or "").strip()
-            if link:
-                lines.append(
-                    f"- {html_escape(t, quote=False)}{external_link_anchor(link, '↗')}"
-                )
-            else:
-                lines.append(f"- {html_escape(t, quote=False)}")
+        lines.append(f"【{i}】")
+        lines.append(f"标题: {title}")
+        lines.append(f"类型: {classify_by_title(e.get('title'))}")
+        lines.append(f"来源: {source}")
+        lines.append(f"日期: {published_str}")
+        lines.append(f"链接: {link}")
+        lines.append(f"摘要: {summary}")
+        lines.append("--------------------------------------------------------------")
+
+    if lines:
         lines.append("")
-
-    lines.append("---")
-    lines.append("")
-
-    for cat in CATEGORIES:
-        for e in buckets[cat]:
-            etitle = (e.get("title") or "(无标题)").strip()
-            link = (e.get("link") or "").strip()
-            if link:
-                lines.append(f"## {external_link_anchor(link, etitle)}")
-            else:
-                lines.append(f"## {html_escape(etitle, quote=False)}")
-            lines.append("")
-            summ = (e.get("summary") or "").strip()
-            if summ:
-                wrapped = textwrap.fill(summ, width=88, subsequent_indent="  ")
-                lines.append(f"- {wrapped}")
-                lines.append("")
-            lines.append("相关链接：")
-            if link:
-                lines.append(f"- {external_link_anchor(link, link)}")
-            else:
-                lines.append("- （无链接）")
-            lines.append("")
-            lines.append("---")
-            lines.append("")
-
-    lines.append("**提示**：内容由AI辅助创作，可能存在**幻觉**和**错误**。")
-    lines.append("")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="RSS/Atom daily digest for Hugo")
+    parser = argparse.ArgumentParser(description="RSS/Atom daily digest")
     parser.add_argument(
         "--date",
         type=str,
@@ -850,8 +874,8 @@ def main() -> int:
     all_entries.sort(key=lambda e: (e.get("published") or datetime.min.replace(tzinfo=timezone.utc)))
     all_entries = limit_entries_per_category(all_entries, MAX_ITEMS_PER_CATEGORY)
 
-    out_file = repo_root / "content" / "post" / f"{target.isoformat()}.md"
-    write_markdown(out_file, target, all_entries)
+    out_file = repo_root / "temp" / target.isoformat() / "rss_articles.md"
+    write_markdown(out_file, all_entries)
 
     print(f"Wrote {out_file} ({len(all_entries)} items, max {MAX_ITEMS_PER_CATEGORY} per category).")
     print(

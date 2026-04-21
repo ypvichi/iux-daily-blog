@@ -1,112 +1,94 @@
 [
   {
+    "name": "Google Blog",
+    "url": "https://blog.google/rss/"
+  },
+  {
     "name": "AI科技",
-    "url": "https://quanwenrss.com/bloomberg/technology-ai",
-    "category": "papers"
+    "url": "https://quanwenrss.com/bloomberg/technology-ai"
   },
   {
-     "name": "财新网科技",
-     "url": "https://quanwenrss.com/caixin/technology",
-     "category": "papers"
+    "name": "财新网科技",
+    "url": "https://quanwenrss.com/caixin/technology"
   },
   {
-     "name": "爱范儿",
-     "url": "https://rss.aishort.top/?type=AppSolution",
-     "category": "papers"
+    "name": "爱范儿",
+    "url": "https://rss.aishort.top/?type=AppSolution"
   },
   {
     "name": "OpenAI Blog",
-    "url": "https://openai.com/blog/rss.xml",
-    "category": "company"
+    "url": "https://openai.com/blog/rss.xml"
   },
   {
     "name": "OpenAI News",
-    "url": "https://openai.com/news/rss.xml",
-    "category": "company"
+    "url": "https://openai.com/news/rss.xml"
   },
   {
     "name": "Microsoft AI Blog",
-    "url": "https://blogs.microsoft.com/ai/feed/",
-    "category": "company"
+    "url": "https://blogs.microsoft.com/ai/feed/"
   },
   {
     "name": "NVIDIA AI Blog",
-    "url": "https://blogs.nvidia.com/feed/",
-    "category": "company"
+    "url": "https://blogs.nvidia.com/feed/"
   },
   {
     "name": "AWS ML Blog",
-    "url": "https://aws.amazon.com/blogs/machine-learning/feed/",
-    "category": "company"
+    "url": "https://aws.amazon.com/blogs/machine-learning/feed/"
   },
   {
     "name": "Apple ML Research",
-    "url": "https://machinelearning.apple.com/rss.xml",
-    "category": "company"
+    "url": "https://machinelearning.apple.com/rss.xml"
   },
   {
     "name": "BAIR Blog",
-    "url": "https://bair.berkeley.edu/blog/feed.xml",
-    "category": "papers"
+    "url": "https://bair.berkeley.edu/blog/feed.xml"
   },
   {
     "name": "The Verge - AI",
-    "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-    "category": "media"
+    "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
   },
   {
     "name": "TechCrunch - AI",
-    "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
-    "category": "media"
+    "url": "https://techcrunch.com/category/artificial-intelligence/feed/"
   },
   {
     "name": "MIT Technology Review",
-    "url": "https://www.technologyreview.com/feed/",
-    "category": "media"
+    "url": "https://www.technologyreview.com/feed/"
   },
   {
     "name": "Ars Technica - AI",
-    "url": "https://feeds.arstechnica.com/arstechnica/technology-lab",
-    "category": "media"
+    "url": "https://feeds.arstechnica.com/arstechnica/technology-lab"
   },
   {
     "name": "Wired - AI",
-    "url": "https://www.wired.com/feed/tag/ai/latest/rss",
-    "category": "media"
+    "url": "https://www.wired.com/feed/tag/ai/latest/rss"
   },
   {
     "name": "AI Trends",
-    "url": "https://www.aitrends.com/feed/",
-    "category": "media"
+    "url": "https://www.aitrends.com/feed/"
   },
   {
     "name": "Science Magazine",
-    "url": "https://www.science.org/rss/news_current.xml",
-    "category": "media"
+    "url": "https://www.science.org/rss/news_current.xml"
   },
   {
     "name": "Synced (AI Review)",
-    "url": "https://syncedreview.com/feed/",
-    "category": "media"
+    "url": "https://syncedreview.com/feed/"
   },
   {
     "name": "Lobsters",
-    "url": "https://lobste.rs/rss",
-    "category": "community"
+    "url": "https://lobste.rs/rss"
   },
   {
     "name": "InfoQ 中文",
-    "url": "https://www.infoq.cn/feed",
-    "category": "cn_media"
+    "url": "https://www.infoq.cn/feed"
   },
   {
     "name": "IEEE Spectrum AI",
-    "url": "https://spectrum.ieee.org/rss/topic/artificial-intelligence",
-    "category": "media"
+    "url": "https://spectrum.ieee.org/rss/topic/artificial-intelligence"
   },
   {
     "name": "量子位",
-    "url": "https://www.qbitai.com/feed",
-    "category": "cn_media"
+    "url": "https://www.qbitai.com/feed"
   }
 ]
