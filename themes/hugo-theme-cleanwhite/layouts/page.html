@@ -2,8 +2,8 @@
 {{ define "main" }}
 <!-- Post Content -->
 <article>
-    <div class="container">
-        <div class="row">
+    <div class="container" style="display: flex;justify-content: center;">
+        <div class="row" style="background-color: #ffffff;display: inline-block;margin: 0 auto;padding: 0 20px;">
             <!-- Post Container -->
             <div class="
             col-lg-8 col-lg-offset-1
@@ -31,8 +31,6 @@
             {{ partial "comments.html" . }}
             
             </div>
-            
-            {{ partial "sidebar.html" . }}
         </div>
     </div>
 </article>

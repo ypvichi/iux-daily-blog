@@ -1,5 +1,5 @@
 baseurl = "https://ypvichi.github.io/iux-daily-blog/"
-title = "AI八点半"
+title = "IUX AI Daily"
 theme = "hugo-theme-cleanwhite"
 languageCode = "zh-CN"
 preserveTaxonomyNames = true
@@ -20,10 +20,10 @@ home = ["HTML", "RSS", "Algolia"]
 
 [params]
   header_image = "img/home-bg-jeep.jpg"
-  SEOTitle = "AI八点半 | iux daily Blog"
-  description = "赵化冰，程序员, 开源爱好者，生活探险家 | 这里是 赵化冰 的博客，与你一起发现更大的世界。"
-  keyword = "赵化冰, zhaohuabing, Zhaohuabing, , 赵化冰的网络日志, 赵化冰的博客, Zhaohuabing Blog, 博客, 个人网站, 互联网, Web, 云原生, PaaS, Istio, Kubernetes, 微服务, Microservice"
-  slogan = "路在脚下，心向远方"
+  SEOTitle = "每日 AI 与科技要闻"
+  description = "聚合 AI、科技与开发生态的每日新闻速览，提供中文摘要、原文链接与按日期归档。"
+  keyword = "AI新闻, 科技新闻, 每日简报, RSS聚合, 人工智能, 开发者资讯, AI八点半"
+  slogan = "瞬息之间，洞见AI科技万象"
   upstreamAttribution = true
 
   image_404 = "img/404-bg.jpg"

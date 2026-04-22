@@ -11,8 +11,8 @@
 /* ===== Light Mode (Default) ===== */
 :root {
     /* Core colors */
-    --color-bg: #ffffff;
-    --color-text-main: #404040;
+    --color-bg: #efefef;
+    --color-text-main: #000000;
     --color-text-secondary: #a3a3a3;
     --color-text-muted: gray;
     --color-primary: #0085a1;
@@ -140,8 +140,8 @@
 /* ===== Manual Light Mode Override ===== */
 [data-theme="light"] {
     /* Core colors */
-    --color-bg: #ffffff;
-    --color-text-main: #404040;
+    --color-bg: #efefef;
+    --color-text-main: #000000;
     --color-text-secondary: #a3a3a3;
     --color-text-muted: gray;
     --color-primary: #0085a1;
@@ -314,7 +314,7 @@ select {
 @media print {
     :root,
     [data-theme="dark"] {
-        --color-bg: #ffffff;
+        --color-bg: #efefef;
         --color-text-main: #000000;
         --color-text-secondary: #404040;
         --color-text-muted: #404040;

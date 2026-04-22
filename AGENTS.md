@@ -8,6 +8,16 @@
 4. github cli
 5. python
 
+## **配置 Git Hook（Hiklink通知）**
+
+本仓已在 **`.git/hooks/pre-push`** 配置推送前 Hiklink 通知（`#!/bin/sh`，通过 `$(git rev-parse --show-toplevel)/hiklink.js` 调用，无需手填路径）：
+
+- **Skill 路径**：会匹配 **`.cursor/skills/`** 或 `skills/`
+- **通知失败**（网络、环境变量等）**不会阻止** `git push`（`node … || true`）
+- 首次克隆后若无该文件，可从本仓库复制一份到 `.git/hooks/pre-push`，并确保可执行：`chmod +x .git/hooks/pre-push`（Windows 用 Git 自带的 `chmod` 或 Git Bash 执行一次）
+
+Hiklink 所需环境变量见根目录 **`hiklink.js`** 文件头注释；未配置时脚本会输出跳过提示，推送照常进行。
+
 # 项目核心任务指导
 
 ## 生成日报
@@ -38,10 +48,10 @@ makerdown 模板
 +++
 date = '2026-04-20T08:30:00+08:00'
 draft = true
-title = 'AI早知道 【2026-04-20】刊'
+title = '【2026-04-20】刊'
 +++
 
-# AI早知道 【2026-04-20】刊
+# AI早报【2026-04-20】刊
 
 ## 概览
 
