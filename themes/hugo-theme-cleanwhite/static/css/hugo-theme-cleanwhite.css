@@ -1080,6 +1080,7 @@ h3 {
 }
 .post-meta {
     font-size: 12px !important;
+    font-style: normal !important;
 }
 .read-more {
     margin-top: 26px;

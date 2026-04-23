@@ -2,6 +2,9 @@
 """
 Fetch multiple RSS/Atom feeds, keep entries whose published time falls on the
 target calendar day (Asia/Shanghai), write markdown to temp/YYYY-MM-DD/rss_articles.md.
+
+Per display type (classify_by_title, same as the written 类型 field), keep at
+most N entries; within each type, pick by quality_score then sort by time.
 """
 
 from __future__ import annotations
@@ -9,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from collections import defaultdict
 import sys
 import urllib.error
 import urllib.request
@@ -763,19 +767,87 @@ def bucket_by_category(entries: list[dict]) -> dict[str, list[dict]]:
     return buckets
 
 
-def limit_entries_per_category(entries: list[dict], max_per_category: int) -> list[dict]:
-    """Keep at most N entries per category while preserving input order."""
-    if max_per_category <= 0:
+def quality_score_entry(entry: dict) -> float:
+    """
+    粗粒度质量分：优先长标题、有信息量的摘要、权威媒体来源；
+    压低纯短链标题、空泛的「Read more」、过短噪声等。与具体业务可再调权重。
+    """
+    title = (entry.get("title") or "").strip()
+    summary = (entry.get("summary") or "").strip()
+    source = (entry.get("source") or "").lower()
+    link = (entry.get("link") or "").lower()
+    tl = title.lower()
+
+    s = 0.0
+    s += min(len(title), 220) * 0.1
+    s += min(len(summary), 1200) * 0.015
+
+    if title.startswith("http://") or title.startswith("https://"):
+        s -= 85.0
+    if re.match(r"^https?://t\.co/\S+\Z", title.strip(), re.I):
+        s -= 120.0
+    if len(title) < 8 and not any(ord(c) > 127 for c in title):
+        s -= 45.0
+    if re.match(r"^read more\b", tl) or tl in ("read more", "read more."):
+        s -= 40.0
+    if tl.startswith("read more about the model"):
+        s -= 35.0
+
+    # 摘要过短或典型推广尾迹
+    if len(summary) < 18:
+        s -= 15.0
+    if "powered by xgo" in summary.lower() and len(summary) < 160:
+        s -= 12.0
+
+    for hint in (
+        "量子位",
+        "爱范儿",
+        "ifanr",
+        "qbitai",
+        "阮一峰",
+        "infoq",
+        "宝玉",
+        "theverge",
+        "techcrunch",
+        "wired",
+        "openai",
+        "google",
+        "github",
+    ):
+        if hint in source or hint in link:
+            s += 6.0
+            break
+
+    return s
+
+
+def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]:
+    """
+    与输出字段「类型」一致（仅 `classify_by_title`），每类最多保留 max_per 条；
+    同类内按 quality_score_entry 降序择优，再按发布时间升序输出整篇列表。
+    """
+    if max_per <= 0:
         return []
-    kept: list[dict] = []
-    counts: dict[str, int] = {c: 0 for c in CATEGORIES}
+    buckets: dict[str, list[dict]] = defaultdict(list)
     for e in entries:
-        cat = classify_entry(e)
-        if counts.get(cat, 0) >= max_per_category:
-            continue
-        counts[cat] = counts.get(cat, 0) + 1
-        kept.append(e)
-    return kept
+        cat = classify_by_title(e.get("title"))
+        buckets[cat].append(e)
+
+    selected: list[dict] = []
+    for cat in DISPLAY_TYPES:
+        group = buckets.get(cat, [])
+        group.sort(
+            key=lambda e: (
+                -quality_score_entry(e),
+                -(e.get("published") or datetime.min.replace(tzinfo=timezone.utc)).timestamp(),
+            )
+        )
+        selected.extend(group[:max_per])
+
+    selected.sort(
+        key=lambda e: e.get("published") or datetime.min.replace(tzinfo=timezone.utc)
+    )
+    return selected
 
 
 def write_markdown(
@@ -810,6 +882,31 @@ def write_markdown(
     out_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
+def flatten_feeds_config(feeds_data: list) -> list[dict[str, str]]:
+    """
+    支持两种 feeds.json 形态：
+    - 嵌套：顶层为各类别 { "name", "feeds": [ { "name", "url" }, ... ] }，展平为单列表拉取。
+    - 旧版：顶层直接为 { "name", "url" }。
+    """
+    out: list[dict[str, str]] = []
+    for item in feeds_data:
+        if not isinstance(item, dict):
+            continue
+        if item.get("url"):
+            n = (item.get("name") or urlparse(str(item.get("url", ""))).netloc or "unknown").strip()
+            out.append({"name": n, "url": str(item["url"]).strip()})
+            continue
+        for sub in item.get("feeds") or []:
+            if not isinstance(sub, dict):
+                continue
+            u = sub.get("url")
+            if not u:
+                continue
+            n = (sub.get("name") or item.get("name") or urlparse(str(u)).netloc or "unknown").strip()
+            out.append({"name": n, "url": str(u).strip()})
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="RSS/Atom daily digest")
     parser.add_argument(
@@ -830,6 +927,13 @@ def main() -> int:
         default=None,
         help="Repository root (default: cwd)",
     )
+    parser.add_argument(
+        "--max-per-category",
+        type=int,
+        default=MAX_ITEMS_PER_CATEGORY,
+        metavar="N",
+        help=f"每类「类型」最多保留条数，同类内按质量分择优（默认 {MAX_ITEMS_PER_CATEGORY}）",
+    )
     args = parser.parse_args()
 
     repo_root = (args.repo_root or Path.cwd()).resolve()
@@ -842,12 +946,16 @@ def main() -> int:
         target = datetime.now(TZ_SH).date()
 
     feeds_raw = json.loads(feeds_path.read_text(encoding="utf-8"))
+    if not isinstance(feeds_raw, list):
+        print("Error: feeds.json must be a JSON array.", file=sys.stderr)
+        return 1
+    feed_list = flatten_feeds_config(feeds_raw)
     all_entries: list[dict] = []
     errors: list[str] = []
     usable_sources: list[str] = []
     unusable_sources: list[str] = []
 
-    for feed in feeds_raw:
+    for feed in feed_list:
         name = feed.get("name") or urlparse(feed.get("url", "")).netloc or "unknown"
         url = feed.get("url")
         if not url:
@@ -872,12 +980,16 @@ def main() -> int:
 
     all_entries = dedupe(all_entries)
     all_entries.sort(key=lambda e: (e.get("published") or datetime.min.replace(tzinfo=timezone.utc)))
-    all_entries = limit_entries_per_category(all_entries, MAX_ITEMS_PER_CATEGORY)
+    cap = max(0, int(args.max_per_category))
+    all_entries = select_top_per_display_type(all_entries, cap)
 
     out_file = repo_root / "temp" / target.isoformat() / "rss_articles.md"
     write_markdown(out_file, all_entries)
 
-    print(f"Wrote {out_file} ({len(all_entries)} items, max {MAX_ITEMS_PER_CATEGORY} per category).")
+    print(
+        f"Wrote {out_file} ({len(all_entries)} items, "
+        f"max {cap} per display type, ranked by quality_score)."
+    )
     print(
         "Source summary:"
         f" usable={len(usable_sources)}"

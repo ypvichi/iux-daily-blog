@@ -25,7 +25,8 @@ step1. 核心内容生成
 
 1. **目标日期**：默认使用 **`Asia/Shanghai` 时区下的「今天」**。若用户指定日期，则使用该日期（ISO `YYYY-MM-DD`）。
 2. **执行抓取脚本**（见下文），在仓库根目录运行。脚本会按条目抓取并去重，优先运行脚本以保证输出可复现；仅在脚本无法运行（如网络被拦等）时再手写文件。
-3. **检查**生成文件：去重、按需删掉跑题条目，确认输出字段完整（标题/**类型**/来源/日期/链接/摘要）。
+3. **条数与质量**：`rss_articles.md` 里输出的「类型」与条目标题一致（仅对标题做关键词判定）。**每一个类型最多保留 10 条**（可用 `--max-per-category N` 调整）。同类候选项多于 N 时，在同类内按脚本的**质量分**（标题/摘要信息量、去短链与噪声、偏权威站点等）择优，再按时间排序输出；无需为落选条目强写摘要。
+4. **检查**生成文件：去重、按需删掉跑题条目，确认输出字段完整（标题/**类型**/来源/日期/链接/摘要）。
 
 step2. 内容翻译和中文润色（不要询问用户，直接开始）
 
@@ -44,6 +45,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py
 ```bash
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --date 2026-04-20
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --feeds .cursor/skills/rss-daily-digest/scripts/feeds.json
+python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --max-per-category 8
 ```
 
 依赖：**Python 3.10+**，**仅标准库**（无需 `pip install`）。
