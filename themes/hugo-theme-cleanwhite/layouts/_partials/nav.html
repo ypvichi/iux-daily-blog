@@ -13,7 +13,9 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="{{ "/iux-daily-blog" | relLangURL }}">{{ .Site.Title }}</a>
+            <a class="navbar-brand" href="{{ "/iux-daily-blog" | relLangURL }}">
+               <img src="/iux-daily-blog/img/logo.png"/>
+            </a>
         </div>
 
         <!-- Collect the nav links, forms, and other content for toggling -->
@@ -39,16 +41,16 @@
 		    {{ range .Site.Params.additional_menus }}
                         <li><a href="{{.href | relLangURL}}/">{{.title}}</a></li>
                     {{ end }}
-		            <li>
+		            <!-- <li>
                         <a href="{{ "search" | relURL }}"><i class="fa fa-search"></i></a>
-		           </li>
+		           </li> -->
                     {{ if not (eq .Site.Params.dark_mode_toggle false) }}
-		            <li>
+		            <!-- <li>
                         <a href="#" id="theme-toggle" title="Toggle dark mode" style="opacity: 0;">
                             <i class="fa fa-moon"></i>
                             <i class="fa fa-sun" style="display: none;"></i>
                         </a>
-		           </li>
+		           </li> -->
                     <script>
                     (function() {
                         // Set correct icon immediately to prevent flash

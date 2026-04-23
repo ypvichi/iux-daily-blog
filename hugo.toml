@@ -23,7 +23,7 @@ home = ["HTML", "RSS", "Algolia"]
   SEOTitle = "每日 AI 与科技要闻"
   description = "聚合 AI、科技与开发生态的每日新闻速览，提供中文摘要、原文链接与按日期归档。"
   keyword = "AI新闻, 科技新闻, 每日简报, RSS聚合, 人工智能, 开发者资讯, AI八点半"
-  slogan = "瞬息之间，洞见AI科技万象"
+  slogan = " "
   upstreamAttribution = true
 
   image_404 = "img/404-bg.jpg"
@@ -94,9 +94,6 @@ home = ["HTML", "RSS", "Algolia"]
   [[params.additional_menus]]
   title =  "归档"
   href =  "/iux-daily-blog/archive/"
-  [[params.additional_menus]]
-  title =  "笔记"
-  href =  "/iux-daily-blog/notes/"
   [[params.additional_menus]]
 
 [outputFormats.Algolia]

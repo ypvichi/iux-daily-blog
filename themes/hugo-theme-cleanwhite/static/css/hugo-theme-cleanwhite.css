@@ -369,7 +369,7 @@ pre code{
     background:no-repeat center center;
     background-color:#a3a3a3;
     background-attachment:scroll;
-    background-position: center bottom;
+    background-position: center center;
     -webkit-background-size:cover;
     -moz-background-size:cover;
     background-size:cover;
@@ -409,7 +409,7 @@ pre code{
 }
 .intro-header .site-heading{
     padding:10px 0 !important;
-    min-height: 100px !important;
+    min-height: 200px !important;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1106,4 +1106,14 @@ h3 {
  .post-container a:hover {
     color: #000;
     color:rgb(4, 141, 61);
+ }
+ .navbar-brand {
+    display: inline-block !important;
+    padding: 12px !important;
+    height:auto !important;
+    cursor: pointer;
+ }
+ .navbar-brand img {
+    height:80px;
+    cursor: pointer;
  }
