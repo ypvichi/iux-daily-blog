@@ -9,7 +9,10 @@ higher first), then quality_score, then sort by time.
 
 Optionally fetches each article URL and extracts up to two images and two
 videos from the main article content (see ARTICLE_MAX_IMAGES/ARTICLE_MAX_VIDEOS;
-use --skip-body-media to disable). Extracted image URLs are not validated over HTTP.
+use --skip-body-media to disable). When body media is on, each URL is probed
+with a short HTTP GET (Range first; image magic / Content-Type) and unreachable
+or HTML-error responses are dropped from rss_articles.md. Use
+--skip-media-url-check to keep legacy behavior (faster, may include dead links).
 """
 
 from __future__ import annotations
@@ -42,6 +45,9 @@ FETCH_TIMEOUT_SECONDS = 18.0
 # 正文内媒体：自每个文章页各取最多 N 个（优先 <article>/<main> 内顺序）。
 ARTICLE_MAX_IMAGES = 2
 ARTICLE_MAX_VIDEOS = 2
+# 写入前探测图片/直链视频是否可拉取；与爬文章页超时分立，避免单条过慢。
+MEDIA_CHECK_TIMEOUT = 6.0
+MEDIA_SNIFF_BYTES = 2048
 
 # 八类归纳：要闻、模型发布、开发生态、产品应用、技术与洞察、行业生态、前瞻与传闻、其他。
 # 展示顺序；分类冲突时用 _CAT_PRIORITY 决胜（特异性优先）。
@@ -602,6 +608,166 @@ def _embed_video_url(abs_u: str) -> bool:
     return False
 
 
+def _chunk_looks_like_html(chunk: bytes) -> bool:
+    s = chunk.lstrip()[:32].lower()
+    return s.startswith(b"<!") or s.startswith(b"<ht") or s.startswith(b"<?xml")
+
+
+def _chunk_looks_like_raster_image(chunk: bytes) -> bool:
+    if len(chunk) < 12:
+        return False
+    if chunk[:3] == b"\xff\xd8\xff":
+        return True
+    if chunk.startswith(b"\x89PNG\r\n\x1a\n"):
+        return True
+    if chunk[:6] in (b"GIF87a", b"GIF89a"):
+        return True
+    if len(chunk) >= 12 and chunk[:4] == b"RIFF" and chunk[8:12] == b"WEBP":
+        return True
+    return False
+
+
+def _http_sniff_get(url: str, referer: str, *, with_range: bool) -> tuple[int, str, bytes] | None:
+    """
+    GET 前 MEDIA_SNIFF_BYTES 字节；带 Range 失败（416 等）时由调用方再试全量。
+    成功返回 (status, content_type_lower, body_prefix)；网络/非 HTTP 错误返回 None。
+    """
+    headers: dict[str, str] = {
+        "User-Agent": USER_AGENT,
+        "Accept": "*/*;q=0.8",
+    }
+    if referer:
+        headers["Referer"] = referer
+    if with_range:
+        headers["Range"] = f"bytes=0-{MEDIA_SNIFF_BYTES - 1}"
+    try:
+        req = urllib.request.Request(url, headers=headers, method="GET")
+        with urllib.request.urlopen(req, timeout=MEDIA_CHECK_TIMEOUT) as resp:  # noqa: S310
+            code = resp.getcode() or 0
+            ct = (resp.headers.get("Content-Type") or "").lower()
+            body = resp.read(MEDIA_SNIFF_BYTES)
+    except urllib.error.HTTPError as e:
+        if e.code == 416 and with_range:
+            return None
+        if e.code in (404, 410):
+            return (e.code, (e.headers.get("Content-Type") or "").lower() if e.headers else "", b"")
+        if e.code and e.code >= 400 and e.code != 416:
+            try:
+                raw = (e.read() or b"")[:MEDIA_SNIFF_BYTES] if e.fp else b""
+            except (OSError, ValueError):
+                raw = b""
+            return (
+                e.code,
+                (e.headers.get("Content-Type") or "").lower() if e.headers else "",
+                raw,
+            )
+        return None
+    except (urllib.error.URLError, OSError, TimeoutError, ValueError):
+        return None
+    return (code, ct, body)
+
+
+def verify_image_url_reachable(url: str, referer: str) -> bool:
+    """
+    仅当能拿到「像图片」的响应时才为 True；404、HTML 整页、断链为 False。
+    使用文章 link 作 Referer，以减轻部分图床防盗链对脚本 UA 的 403（与浏览器行为接近）。
+    """
+    if not url.startswith("http://") and not url.startswith("https://"):
+        return False
+    for with_range in (True, False):
+        got = _http_sniff_get(url, referer, with_range=with_range)
+        if got is None:
+            if with_range:
+                continue
+            return False
+        code, ct, chunk = got
+        if code in (404, 410) or code >= 500:
+            return False
+        if not (200 <= code < 300):
+            return False
+        if not chunk:
+            return False
+        if "text/html" in ct and "image" not in ct and "xml" not in ct:
+            if _chunk_looks_like_html(chunk):
+                return False
+        if ct and (ct.startswith("image/") or "image/svg" in ct):
+            if "text/html" in ct and _chunk_looks_like_html(chunk) and not _chunk_looks_like_raster_image(chunk):
+                return False
+            return True
+        if _chunk_looks_like_html(chunk) and not _chunk_looks_like_raster_image(chunk):
+            return False
+        if _chunk_looks_like_raster_image(chunk):
+            return True
+        s = chunk.lstrip()
+        if s.startswith(b"<svg"):
+            return True
+        return False
+    return False
+
+
+def verify_video_url_reachable(url: str, referer: str) -> bool:
+    """
+    嵌入类（YouTube 等）用短 GET 看是否 2xx；直链 m3u8/mp4/webm 做 ftyp/WEBM/ m3u8 嗅探。
+    """
+    if not url.startswith("http://") and not url.startswith("https://"):
+        return False
+    low = url.lower()
+    is_direct = re.search(r"\.(?:m3u8|mp4|webm|ogv|mov)(?:\?|#|$)", low) is not None
+    if _embed_video_url(url) and not is_direct:
+        g = _http_sniff_get(url, referer, with_range=True)
+        if g is None:
+            g = _http_sniff_get(url, referer, with_range=False)
+        if g is None:
+            return False
+        code, _ct, _chunk = g
+        if code in (404, 410) or code >= 500:
+            return False
+        return 200 <= code < 300
+    for with_range in (True, False):
+        got = _http_sniff_get(url, referer, with_range=with_range)
+        if got is None:
+            if with_range:
+                continue
+            return False
+        code, ct, chunk = got
+        if code in (404, 410) or code >= 500:
+            return False
+        if not (200 <= code < 300):
+            return False
+        if not chunk:
+            if with_range:
+                continue
+            return False
+        ctn = (ct or "").lower()
+        if "text/html" in ctn and not is_direct and _chunk_looks_like_html(chunk):
+            return False
+        if chunk[:4] == b"\x1a\x45\xdf\xa3" or (len(chunk) >= 8 and chunk[4:8] == b"ftyp"):
+            return True
+        if b"#EXTM3U" in chunk[:32] or chunk.lstrip()[:7].lower() == b"#extm3u":
+            return True
+        if is_direct and (
+            "video" in ctn
+            or "mpegurl" in ctn
+            or "x-mpeg" in ctn
+            or "octet-stream" in ctn
+        ) and (not _chunk_looks_like_html(chunk)):
+            return True
+        if is_direct and b"#EXT" in chunk[:32]:
+            return True
+    return False
+
+
+def filter_reachable_body_media(
+    imgs: list[str],
+    vids: list[str],
+    referer: str,
+) -> tuple[list[str], list[str]]:
+    """保序；仅保留 HTTP 可验证的图/视频条（各最多 N 由上游已截断）。"""
+    out_i = [u for u in imgs if verify_image_url_reachable(u, referer)]
+    out_v = [u for u in vids if verify_video_url_reachable(u, referer)]
+    return out_i, out_v
+
+
 class _BodyMediaParser(HTMLParser):
     """自正文顺序收集 <img>、<video>/<source>、嵌入视频 <iframe>。"""
 
@@ -696,7 +862,7 @@ def extract_body_media(html_fragment: str, base_url: str) -> tuple[list[str], li
     return p.images[: ARTICLE_MAX_IMAGES], p.videos[: ARTICLE_MAX_VIDEOS]
 
 
-def enrich_entry_with_body(entry: dict) -> dict:
+def enrich_entry_with_body(entry: dict, *, verify_media_urls: bool = True) -> dict:
     """Fetch link HTML，追加 body_text、core_summary、正文内图片/视频（best-effort）。"""
     link = (entry.get("link") or "").strip()
     out = dict(entry)
@@ -712,6 +878,8 @@ def enrich_entry_with_body(entry: dict) -> dict:
     out["core_summary"] = extractive_core_summary(body_text)
     fragment = extract_article_html_fragment(html)
     imgs, vids = extract_body_media(fragment, link)
+    if verify_media_urls and (imgs or vids):
+        imgs, vids = filter_reachable_body_media(imgs, vids, link)
     out["body_images"] = imgs
     out["body_videos"] = vids
     # 兼容旧字段名
@@ -1178,6 +1346,11 @@ def main() -> int:
         action="store_true",
         help="不逐条打开链接抓取正文内图片/视频（仅 RSS 摘要，生成更快）",
     )
+    parser.add_argument(
+        "--skip-media-url-check",
+        action="store_true",
+        help="不探测图片/视频 URL 是否可 HTTP 访问（与 --skip-body-media 互斥；可能写入失效链接，生成更快）",
+    )
     args = parser.parse_args()
 
     repo_root = (args.repo_root or Path.cwd()).resolve()
@@ -1236,8 +1409,9 @@ def main() -> int:
     cap = max(0, int(args.max_per_category))
     all_entries = select_top_per_display_type(all_entries, cap)
 
+    check_urls = (not args.skip_body_media) and (not args.skip_media_url_check)
     if not args.skip_body_media:
-        all_entries = [enrich_entry_with_body(e) for e in all_entries]
+        all_entries = [enrich_entry_with_body(e, verify_media_urls=check_urls) for e in all_entries]
 
     out_file = repo_root / "temp" / target.isoformat() / "rss_articles.md"
     write_markdown(out_file, all_entries)
@@ -1245,6 +1419,10 @@ def main() -> int:
     extra = ""
     if not args.skip_body_media:
         extra = f" body_media=on (<= {ARTICLE_MAX_IMAGES} imgs / {ARTICLE_MAX_VIDEOS} videos per item)"
+        if check_urls:
+            extra += " media_url_check=on"
+        else:
+            extra += f" media_url_check=off{(' (--skip-media-url-check)' if args.skip_media_url_check else '')}"
     else:
         extra = " body_media=off (--skip-body-media)"
     print(

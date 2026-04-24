@@ -5,7 +5,7 @@
 日期: 2026-04-24 00:17:29
 链接: https://aws.amazon.com/blogs/machine-learning/applying-multimodal-biological-foundation-models-across-therapeutics-and-patient-care/
 摘要: In this post, we'll explore how multimodal BioFMs work, showcase real-world applications in drug discovery and clinical development, and contextualize how AWS enables organizations to build and deploy multimodal BioFMs.
-图片: https://d2908q01vomqb2.cloudfront.net/f1f836cb4ea6efb2a0b1b99f41ad8b103eff4b59/2026/04/21/ML-20310-image-1-new.png；https://d2908q01vomqb2.cloudfront.net/f1f836cb4ea6efb2a0b1b99f41ad8b103eff4b59/2026/04/21/ML-20310-image-2-new.png
+图片: （无）
 视频: （无）
 --------------------------------------------------------------
 【2】
@@ -16,7 +16,7 @@
 链接: https://aws.amazon.com/blogs/machine-learning/amazon-quick-for-marketing-from-scattered-data-to-strategic-action/
 摘要: Amazon Quick changes how you work. You can set it up in minutes and by the end of the day, you will wonder how you ever worked without it. Quick connects with your applications, tools, and data, creating a personal knowledge graph that learns your priorities, preferences, and network.
 图片: （无）
-视频: https://d2908q01vomqb2.cloudfront.net/artifacts/DBSBlogs/ML-20786/Quick+Demo_Marketing-Flow.mp4?_=1；https://d2908q01vomqb2.cloudfront.net/artifacts/DBSBlogs/ML-20786/Quick+Demo_Marketing-Research.mp4?_=2
+视频: （无）
 --------------------------------------------------------------
 【3】
 标题: Building Custom Atomistic Simulation Workflows for Chemistry and Materials Science with NVIDIA ALCHEMI Toolkit

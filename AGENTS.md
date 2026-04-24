@@ -64,7 +64,7 @@ title = '【2026-04-20】刊'
 
 - <中文标题><a href="链接地址" target="_blank" rel="noopener noreferrer">↗</a>
 
------ （摘要内容列表，必须和概览中的顺序保持一致）
+----- （摘要内容列表，必须和概览中的顺序保持一致,概览中的标题必须和下列中的标题是一一对应的，不能出错）
 ## <a href="链接地址" target="_blank" rel="noopener noreferrer">中文标题</a>
 
 - 中文摘要
