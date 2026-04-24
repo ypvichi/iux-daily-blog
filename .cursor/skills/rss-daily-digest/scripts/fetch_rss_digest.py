@@ -9,7 +9,9 @@ higher first), then quality_score, then sort by time.
 
 Optionally fetches each article URL and extracts up to two images and two
 videos from the main article content (see ARTICLE_MAX_IMAGES/ARTICLE_MAX_VIDEOS;
-use --skip-body-media to disable). When body media is on, each URL is probed
+use --skip-body-media to disable). Per-feed `showMedia: false` in feeds.json
+skips only正文内图片/视频抓取（仍拉取页面生成摘要/正文，与全局 --skip-body-media 不同）。
+When body media is on, each URL is probed
 with a short HTTP GET (Range first; image magic / Content-Type) and unreachable
 or HTML-error responses are dropped from rss_articles.md. Use
 --skip-media-url-check to keep legacy behavior (faster, may include dead links).
@@ -1004,14 +1006,22 @@ def extract_body_media(html_fragment: str, base_url: str) -> tuple[list[str], li
     return p.images[: ARTICLE_MAX_IMAGES], p.videos[: ARTICLE_MAX_VIDEOS]
 
 
-def enrich_entry_with_body(entry: dict, *, verify_media_urls: bool = True) -> dict:
+def enrich_entry_with_body(
+    entry: dict,
+    *,
+    verify_media_urls: bool = True,
+    include_body_media: bool | None = None,
+) -> dict:
     """Fetch link HTML，追加 body_text、core_summary、正文内图片/视频（best-effort）。"""
+    if include_body_media is None:
+        include_body_media = bool(entry.get("show_media", True))
     link = (entry.get("link") or "").strip()
     body_url = (entry.get("body_fetch_url") or link).strip()
     out = dict(entry)
     out["body_error"] = None
     out["body_images"] = []
     out["body_videos"] = []
+    out["core_images"] = []
     html = fetch_html_text(body_url)
     if html is None:
         out["body_error"] = "fetch_failed"
@@ -1034,15 +1044,6 @@ def enrich_entry_with_body(entry: dict, *, verify_media_urls: bool = True) -> di
         except Exception:  # noqa: BLE001 — 单站 enrich 失败则回退通用逻辑
             extract = {}
 
-    fr_media = (extract.get("html_fragment_for_media") or "").strip()
-    if fr_media:
-        fragment = fr_media
-    else:
-        acn = (out.get("article_class_name") or "").strip()
-        if acn:
-            fragment = extract_html_fragment_by_class_name(html, acn)
-        else:
-            fragment = extract_article_html_fragment(html)
     if extract.get("title"):
         out["title"] = str(extract["title"]).strip()
     if extract.get("summary"):
@@ -1054,13 +1055,22 @@ def enrich_entry_with_body(entry: dict, *, verify_media_urls: bool = True) -> di
         out["core_summary"] = extractive_core_summary(str(extract["summary"]))
     else:
         out["core_summary"] = extractive_core_summary(body_text)
-    imgs, vids = extract_body_media(fragment, body_url)
-    if verify_media_urls and (imgs or vids):
-        imgs, vids = filter_reachable_body_media(imgs, vids, body_url)
-    out["body_images"] = imgs
-    out["body_videos"] = vids
-    # 兼容旧字段名
-    out["core_images"] = imgs
+    if include_body_media:
+        fr_media = (extract.get("html_fragment_for_media") or "").strip()
+        if fr_media:
+            fragment = fr_media
+        else:
+            acn = (out.get("article_class_name") or "").strip()
+            if acn:
+                fragment = extract_html_fragment_by_class_name(html, acn)
+            else:
+                fragment = extract_article_html_fragment(html)
+        imgs, vids = extract_body_media(fragment, body_url)
+        if verify_media_urls and (imgs or vids):
+            imgs, vids = filter_reachable_body_media(imgs, vids, body_url)
+        out["body_images"] = imgs
+        out["body_videos"] = vids
+        out["core_images"] = imgs
     if not out["core_summary"]:
         out["body_error"] = "empty_text"
     return out
@@ -1464,6 +1474,7 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
     - 旧版：顶层直接为 { "name", "url", "priority"? }。
     priority 为可选非负整数，数值越大该源越优先（抓取顺序与同类截断择优均考虑）。
     另可为单源设置 "articleClassName"：只在该 class 的节点内取正文图/视频。
+    可为单源设置 "showMedia"：false 时不抓取/detect 正文内图片、视频（仍抓取页面文本）。
     """
     out: list[dict] = []
     for item in feeds_data:
@@ -1481,6 +1492,7 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             acn = item.get("articleClassName") or item.get("article_class_name")
             if isinstance(acn, str) and acn.strip():
                 row["article_class_name"] = acn.strip()
+            row["show_media"] = bool(item.get("showMedia", True))
             out.append(row)
             continue
         for sub in item.get("feeds") or []:
@@ -1500,6 +1512,7 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             acn = sub.get("articleClassName") or sub.get("article_class_name")
             if isinstance(acn, str) and acn.strip():
                 row["article_class_name"] = acn.strip()
+            row["show_media"] = bool(sub.get("showMedia", True))
             out.append(row)
     return out
 
@@ -1613,6 +1626,7 @@ def main() -> int:
                     acn = (feed.get("article_class_name") or feed.get("articleClassName") or "").strip()
                     if acn:
                         row["article_class_name"] = acn
+                    row["show_media"] = bool(feed.get("show_media", True))
                     all_entries.append(row)
                     matched_items += 1
             usable_sources.append(f"{name}: ok (parsed={len(parsed_items)}, matched={matched_items})")

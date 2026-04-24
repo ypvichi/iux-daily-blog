@@ -6,12 +6,8 @@
         "name": "量子位",
         "url": "https://www.qbitai.com/feed",
         "priority": 4,
-        "articleClassName":"article"
-      },
-      {
-        "name": "爱范儿",
-        "url": "http://www.ifanr.com/feed",
-        "priority": 1
+        "articleClassName":"article",
+        "showMedia":false
       },
       {
         "name": "阮一峰的网络日志",
