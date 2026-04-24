@@ -5,25 +5,31 @@
       {
         "name": "量子位",
         "url": "https://www.qbitai.com/feed",
+        "priority": 6,
+        "articleSelector": ".article",
+        "showMedia": false
+      },
+      {
+        "name": "AIGC IZZI CN",
+        "url": "https://aigc.izzi.cn/category/news",
+        "priority": 5,
+        "render": "AigcIzziCnRender",
+        "articleSelector": ".content-sub-info + p"
+      },
+      {
+        "name": "36氪",
+        "url": "https://www.36kr.com/information/AI/",
         "priority": 4,
-        "articleClassName":"article",
-        "showMedia":false
+        "articleSelector": ".articleDetailContent",
+        "render": "News36KrRender"
       },
       {
-        "name": "阮一峰的网络日志",
-        "url": "https://www.ruanyifeng.com/blog/atom.xml",
-        "priority": 3
-      },
-      {
-        "name": "美团技术团队",
-        "url": "https://tech.meituan.com/feed/",
-        "priority": 1
-      },{
         "name": "DAILY AI NEWS",
         "url": "https://ai-bot.cn/daily-ai-news/",
-        "priority": 100,
-        "render":"DailyAiNewsRender"
+        "priority": 3,
+        "render": "DailyAiNewsRender"
       }
+      
     ]
   },
   {

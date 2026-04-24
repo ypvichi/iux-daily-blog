@@ -21,8 +21,9 @@ render/ModuleBaseName.py：须实现 parse_feed(listing_html, *, source_name,
 listing_url="") -> list[dict]（字段与 RSS 条目一致）。可选在同名类 ModuleBaseName
 上实现 enrich(html, link, entry) -> dict，对单页再提取 title/summary/
 html_fragment_for_media；条目可设 feed_render 以启用该类。条目可含 body_fetch_url：
-正文配图抓取使用该 URL 而非 link。可为某项设置 "articleClassName"：正文内
-图片/视频仅从该 class 的节点内收集（不依赖通用 article/main 截取）。
+正文配图抓取使用该 URL 而非 link。可为某项设置 "articleSelector"（CSS
+路径选择器，如 .article 或 .a + p）：正文内图片/视频仅从**首个匹配**节点
+的 innerHTML 中收集。
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ import importlib.util
 import json
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 import sys
 import urllib.error
 import urllib.request
@@ -499,18 +501,173 @@ _VOID_HTML5 = frozenset(
 )
 
 
-def _class_attr_has_token(class_attr: str | None, token: str) -> bool:
-    if not class_attr or not (token or "").strip():
+def _feed_article_selector_from_config(entry: dict) -> str:
+    """
+    读取 articleSelector / article_selector（JSON 中可用驼峰或蛇形键）。
+    返回空串表示未配置。
+    """
+    return (entry.get("articleSelector") or entry.get("article_selector") or "").strip()
+
+
+# --- 轻量 HTML DOM + 受限 CSS 选择器（标准库，支持 .a / #id / p.foo、后代链、+ 相邻） ---
+
+
+@dataclass
+class _SimpleSel:
+    kind: str  # "id" | "classes" | "tag" | "tag_classes"
+    id_val: str = ""
+    tag: str = ""
+    classes: tuple[str, ...] = ()
+
+
+def _parse_simple_sel(part: str) -> _SimpleSel | None:
+    s = (part or "").strip()
+    if not s:
+        return None
+    if s.startswith("#"):
+        rest = s[1:]
+        if re.match(r"^[\w-]+$", rest):
+            return _SimpleSel("id", id_val=rest)
+        return None
+    m = re.match(r"^((?:\.[a-zA-Z0-9_-]+)+)$", s)
+    if m:
+        cls = re.findall(r"\.([a-zA-Z0-9_-]+)", s)
+        if cls:
+            return _SimpleSel("classes", classes=tuple(cls))
+        return None
+    m = re.match(r"^([a-zA-Z][\w-]*)((?:\.[a-zA-Z0-9_-]+)+)$", s)
+    if m:
+        t = m.group(1).lower()
+        cls = re.findall(r"\.([a-zA-Z0-9_-]+)", m.group(2))
+        return _SimpleSel("tag_classes", tag=t, classes=tuple(cls))
+    m = re.match(r"^([a-zA-Z][\w-]*)$", s)
+    if m:
+        return _SimpleSel("tag", tag=m.group(1).lower())
+    return None
+
+
+def _node_attr_str(node: dict, name: str) -> str:
+    for k, v in (node.get("attrs") or []):
+        if (k or "").lower() == name:
+            return v if v is not None else ""
+    return ""
+
+
+def _node_class_tokens(node: dict) -> list[str]:
+    c = _node_attr_str(node, "class")
+    if not c.strip():
+        return []
+    return c.split()
+
+
+def _match_simple(node: dict, sp: _SimpleSel) -> bool:
+    if node.get("is_text") or (node.get("tag") in (None, "document")):
         return False
-    want = token.strip()
-    if not want:
+    t = (node.get("tag") or "").lower()
+    if sp.kind == "id":
+        return _node_attr_str(node, "id") == sp.id_val
+    if sp.kind == "tag":
+        return t == sp.tag
+    toks = _node_class_tokens(node)
+    if sp.kind == "classes":
+        return bool(toks) and all(c in toks for c in sp.classes)
+    if sp.kind == "tag_classes":
+        if t != sp.tag:
+            return False
+        return bool(toks) and all(c in toks for c in sp.classes)
+    return False
+
+
+def _parse_selector(sel: str) -> tuple | None:
+    s = (sel or "").strip()
+    if not s:
+        return None
+    m = re.match(r"^(.+?)\s*\+\s*(.+)$", s)
+    if m:
+        left = [x for x in re.split(r"\s+", m.group(1).strip()) if x]
+        right = [x for x in re.split(r"\s+", m.group(2).strip()) if x]
+        if not left or not right:
+            return None
+        return ("adj", left, right)
+    parts = [x for x in re.split(r"\s+", s) if x]
+    if not parts:
+        return None
+    return ("desc", parts)
+
+
+def _match_chain(n: dict, simple_parts: list[str]) -> bool:
+    sels = [_parse_simple_sel(p) for p in simple_parts]
+    if any(s is None for s in sels) or not sels:
         return False
-    parts = class_attr.split()
-    if want in parts:
-        return True
-    # e.g. articleClassName "foo bar" means element must have both classes
-    toks = [t for t in want.split() if t]
-    return bool(toks) and all(t in parts for t in toks)
+    assert sels[-1] is not None
+    if not _match_simple(n, sels[-1]):  # type: ignore[arg-type]
+        return False
+    cur = n.get("parent")
+    for i in range(len(sels) - 2, -1, -1):
+        sp = sels[i]
+        assert sp is not None
+        found: dict | None = None
+        while cur is not None:
+            if _match_simple(cur, sp):
+                found = cur
+                break
+            cur = cur.get("parent")
+        if not found:
+            return False
+        cur = found.get("parent")
+    return True
+
+
+def _iter_element_nodes(n: dict):
+    if not n.get("is_text") and n.get("tag") not in (None, "document"):
+        yield n
+    for c in n.get("children", []):
+        yield from _iter_element_nodes(c)
+
+
+def _iter_element_nodes_preorder(root: dict):
+    for n in _iter_element_nodes(root):
+        yield n
+
+
+def _prev_element_sibling(n: dict) -> dict | None:
+    p = n.get("parent")
+    if not p:
+        return None
+    ch: list = p.get("children", [])
+    try:
+        idx = ch.index(n)
+    except ValueError:
+        return None
+    for j in range(idx - 1, -1, -1):
+        sib = ch[j]
+        if not sib.get("is_text"):
+            return sib
+    return None
+
+
+def _node_inner_html_serialize(n: dict) -> str:
+    """仅序列化子节点为 innerHTML（不含 n 自身起止标签）。"""
+    if n.get("is_text"):
+        return html_escape(n.get("data", "") or "", quote=True)
+    parts: list[str] = []
+    for c in n.get("children", []):
+        parts.append(_serialize_node_outer(c))
+    return "".join(parts)
+
+
+def _serialize_node_outer(n: dict) -> str:
+    if n.get("is_text"):
+        return html_escape(n.get("data", "") or "", quote=True)
+    tag = (n.get("tag") or "").lower()
+    if tag in ("document", "root", ""):
+        return _node_inner_html_serialize(n)
+    attrs = n.get("attrs") or []
+    start = _serialize_start_tag_for_fragment(tag, attrs)
+    if tag in _VOID_HTML5:
+        return start
+    inner = _node_inner_html_serialize(n)
+    return f"{start}{inner}</{tag}>"
 
 
 def _serialize_start_tag_for_fragment(tag: str, attrs) -> str:  # noqa: ANN001
@@ -522,90 +679,109 @@ def _serialize_start_tag_for_fragment(tag: str, attrs) -> str:  # noqa: ANN001
         else:
             q = html_escape(str(value), quote=True)
             parts.append(f'{(name or "").lower()}="{q}"')
+    v = tlow
+    if v in _VOID_HTML5:
+        return "<" + " ".join(parts) + " />"
     return "<" + " ".join(parts) + ">"
 
 
-class _ClassInnerHtmlCollector(HTMLParser):
-    """
-    取文档中**第一个** class 列表匹配给定 token 的元素的 inner HTML（不含该元素起止标签）。
-    """
-
-    def __init__(self, class_token: str) -> None:
+class _DomTreeBuilder(HTMLParser):
+    def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
-        self._token = (class_token or "").strip()
-        self._seeking = True
-        self._finished = False
-        self._buf: list[str] = []
-        self._stack: list[str] = []
-
-    def _class_ok(self, attrs) -> bool:  # noqa: ANN001
-        for name, value in attrs:
-            if (name or "").lower() == "class":
-                return _class_attr_has_token(value, self._token)
-        return False
+        self.root: dict = {
+            "tag": "document",
+            "attrs": [],
+            "children": [],
+            "parent": None,
+        }
+        self._stack: list[dict] = [self.root]
 
     def handle_starttag(self, tag: str, attrs) -> None:  # noqa: ANN001
         t = tag.lower()
-        if self._finished:
-            return
-        if self._seeking:
-            if t in _VOID_HTML5:
-                return
-            if self._class_ok(attrs):
-                self._seeking = False
-                self._stack = [t]
-            return
-        if not self._stack:
-            return
+        node: dict = {
+            "tag": t,
+            "attrs": list(attrs or []),
+            "children": [],
+            "parent": self._stack[-1],
+        }
+        self._stack[-1]["children"].append(node)
+        if t not in _VOID_HTML5:
+            self._stack.append(node)
+
+    def handle_startendtag(self, tag: str, attrs) -> None:  # noqa: ANN001
+        t = tag.lower()
         if t in _VOID_HTML5:
-            self._buf.append(_serialize_start_tag_for_fragment(tag, attrs))
+            self.handle_starttag(tag, attrs)
             return
-        self._stack.append(t)
-        self._buf.append(_serialize_start_tag_for_fragment(tag, attrs))
+        self.handle_starttag(tag, attrs)
+        if self._stack and self._stack[-1] is not self.root and self._stack[-1].get("tag") == t:
+            self._stack.pop()
 
     def handle_endtag(self, tag: str) -> None:
         t = tag.lower()
-        if self._finished or self._seeking or not self._stack:
+        if t in _VOID_HTML5:
             return
-        if t != self._stack[-1]:
-            return
-        self._stack.pop()
-        if not self._stack:
-            self._finished = True
-            return
-        self._buf.append(f"</{t}>")
+        while len(self._stack) > 1:
+            cur = self._stack.pop()
+            if cur.get("tag") == t:
+                return
 
     def handle_data(self, data: str) -> None:
-        if self._finished or self._seeking or not self._stack:
+        if not data:
             return
-        if data:
-            self._buf.append(data)
-
-    def inner_html(self) -> str:
-        return "".join(self._buf).strip()
-
-    def matched(self) -> bool:
-        return not self._seeking
+        parent = self._stack[-1]
+        parent["children"].append({"is_text": True, "data": data, "parent": parent})
 
 
-def extract_html_fragment_by_class_name(full_html: str, class_name: str) -> str:
-    """
-    从 full_html 中取第一个 `class` 含 class_name 对应 token（空格分词为类列表）的元素的 inner HTML。
-    找不到则返回空串（不回落到全页，避免采到侧栏/头部图）。若已匹配到元素但
-    未遇闭合标签，仍返回已采集的片段（供容错）。
-    """
-    cn = (class_name or "").strip()
-    if not full_html or not cn:
-        return ""
-    p = _ClassInnerHtmlCollector(cn)
+def _build_html_dom(full_html: str) -> dict | None:
+    if not full_html:
+        return None
+    p = _DomTreeBuilder()
     try:
         p.feed(full_html)
         p.close()
     except Exception:  # noqa: BLE001
+        return None
+    return p.root
+
+
+def _select_first_node_by_selector(root: dict, parsed: tuple) -> dict | None:
+    kind = parsed[0]
+    if kind == "desc":
+        parts = parsed[1]
+        for n in _iter_element_nodes_preorder(root):
+            if _match_chain(n, parts):
+                return n
+        return None
+    if kind == "adj":
+        left, right = parsed[1], parsed[2]
+        for n in _iter_element_nodes_preorder(root):
+            if not _match_chain(n, right):
+                continue
+            ps = _prev_element_sibling(n)
+            if ps is not None and _match_chain(ps, left):
+                return n
+        return None
+    return None
+
+
+def extract_html_fragment_by_selector(full_html: str, selector: str) -> str:
+    """
+    在 full_html 中按有限 CSS 语法（后代空格链、+ 相邻、.class、#id、tag）匹配**第一个**
+    元素，返回其 inner HTML。找不到则返回空串（不回落到全页）。
+    """
+    if not full_html or not (selector or "").strip():
         return ""
-    if p.matched():
-        return p.inner_html()
-    return ""
+    pr = _parse_selector(selector.strip())
+    if not pr:
+        return ""
+    root = _build_html_dom(full_html)
+    if not root:
+        return ""
+    node = _select_first_node_by_selector(root, pr)
+    if not node:
+        return ""
+    return _node_inner_html_serialize(node)
 
 
 def html_to_visible_text(html: str) -> str:
@@ -1060,9 +1236,9 @@ def enrich_entry_with_body(
         if fr_media:
             fragment = fr_media
         else:
-            acn = (out.get("article_class_name") or "").strip()
-            if acn:
-                fragment = extract_html_fragment_by_class_name(html, acn)
+            asel = (out.get("article_selector") or "").strip()
+            if asel:
+                fragment = extract_html_fragment_by_selector(html, asel)
             else:
                 fragment = extract_article_html_fragment(html)
         imgs, vids = extract_body_media(fragment, body_url)
@@ -1473,7 +1649,8 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
     - 嵌套：顶层为各类别 { "name", "feeds": [ { "name", "url", "priority"? }, ... ] }，展平为单列表拉取。
     - 旧版：顶层直接为 { "name", "url", "priority"? }。
     priority 为可选非负整数，数值越大该源越优先（抓取顺序与同类截断择优均考虑）。
-    另可为单源设置 "articleClassName"：只在该 class 的节点内取正文图/视频。
+    另可为单源设置 "articleSelector"（CSS 选择器，如 .content + p）：只在该
+    选择器**首个**匹配节点内取正文图/视频。
     可为单源设置 "showMedia"：false 时不抓取/detect 正文内图片、视频（仍抓取页面文本）。
     """
     out: list[dict] = []
@@ -1489,9 +1666,9 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             rk = item.get("render")
             if rk:
                 row["render"] = str(rk).strip()
-            acn = item.get("articleClassName") or item.get("article_class_name")
-            if isinstance(acn, str) and acn.strip():
-                row["article_class_name"] = acn.strip()
+            ase = _feed_article_selector_from_config(item)
+            if ase:
+                row["article_selector"] = ase
             row["show_media"] = bool(item.get("showMedia", True))
             out.append(row)
             continue
@@ -1509,9 +1686,9 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             rk = sub.get("render")
             if rk:
                 row["render"] = str(rk).strip()
-            acn = sub.get("articleClassName") or sub.get("article_class_name")
-            if isinstance(acn, str) and acn.strip():
-                row["article_class_name"] = acn.strip()
+            ase = _feed_article_selector_from_config(sub)
+            if ase:
+                row["article_selector"] = ase
             row["show_media"] = bool(sub.get("showMedia", True))
             out.append(row)
     return out
@@ -1623,9 +1800,9 @@ def main() -> int:
                 if d == target:
                     row = dict(item)
                     row["feed_priority"] = prio
-                    acn = (feed.get("article_class_name") or feed.get("articleClassName") or "").strip()
-                    if acn:
-                        row["article_class_name"] = acn
+                    ase = (feed.get("article_selector") or "").strip()
+                    if ase:
+                        row["article_selector"] = ase
                     row["show_media"] = bool(feed.get("show_media", True))
                     all_entries.append(row)
                     matched_items += 1

@@ -30,9 +30,10 @@ Hiklink 所需环境变量见根目录 **`hiklink.js`** 文件头注释；未配
 1. 只获取当日 RSS 资讯；按 `fetch_rss_digest.py` 规则，**每个类型（与 `rss_articles.md` 中「类型」一致）最多保留 10 条**，同类内由脚本按质量分择优，落选条目不必写入 `content/post`。
 2. `rss_articles.md` 中每条可含从原文页抓取的 **「图片:」「视频:」** 行；生成 `content/post/<日期>.md` 时，若该条在 `rss_articles` 中**不是** `（无）`，须把相应图片/视频**写入**该条对应的「摘要分块」中（见 Step3 模板与格式说明）。
 
-### Step3. 综合 `rss_articles.md` 的内容，生成最终完整的日报md `content/post/<YYYY-MM-DD>.md`
+### Step2. 综合 `rss_articles.md` 的内容，生成最终完整的日报md `content/post/<YYYY-MM-DD>.md`
 
 **相关约束**
+1. 如果遇到多条表达的是 同一件事情，或者相同的资讯内容的，根据数据源的优先级，选取一条即可
 
 **输出格式**
 
