@@ -13,11 +13,19 @@ use --skip-body-media to disable). When body media is on, each URL is probed
 with a short HTTP GET (Range first; image magic / Content-Type) and unreachable
 or HTML-error responses are dropped from rss_articles.md. Use
 --skip-media-url-check to keep legacy behavior (faster, may include dead links).
+
+feeds.json 可为某项设置 "render": "ModuleBaseName"，对应本脚本同目录下
+render/ModuleBaseName.py：须实现 parse_feed(listing_html, *, source_name,
+listing_url="") -> list[dict]（字段与 RSS 条目一致）。可选在同名类 ModuleBaseName
+上实现 enrich(html, link, entry) -> dict，对单页再提取 title/summary/
+html_fragment_for_media；条目可设 feed_render 以启用该类。条目可含 body_fetch_url：
+正文配图抓取使用该 URL 而非 link。
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 from collections import defaultdict
@@ -869,21 +877,50 @@ def extract_body_media(html_fragment: str, base_url: str) -> tuple[list[str], li
 def enrich_entry_with_body(entry: dict, *, verify_media_urls: bool = True) -> dict:
     """Fetch link HTML，追加 body_text、core_summary、正文内图片/视频（best-effort）。"""
     link = (entry.get("link") or "").strip()
+    body_url = (entry.get("body_fetch_url") or link).strip()
     out = dict(entry)
     out["body_error"] = None
     out["body_images"] = []
     out["body_videos"] = []
-    html = fetch_html_text(link)
+    html = fetch_html_text(body_url)
     if html is None:
         out["body_error"] = "fetch_failed"
         return out
+
+    extract: dict = {}
+    fr = (entry.get("feed_render") or "").strip()
+    if fr:
+        try:
+            mod = load_render_module(fr)
+            cls = getattr(mod, fr, None)
+            if isinstance(cls, type):
+                inst = cls()
+                if hasattr(inst, "enrich"):
+                    raw = inst.enrich(html, link, out)
+                    if isinstance(raw, dict):
+                        extract = raw
+        except (FileNotFoundError, ImportError, OSError, TypeError, ValueError):
+            extract = {}
+        except Exception:  # noqa: BLE001 — 单站 enrich 失败则回退通用逻辑
+            extract = {}
+
+    fragment = (extract.get("html_fragment_for_media") or "").strip() or extract_article_html_fragment(
+        html
+    )
+    if extract.get("title"):
+        out["title"] = str(extract["title"]).strip()
+    if extract.get("summary"):
+        out["summary"] = str(extract["summary"]).strip()[:500]
+
     body_text = html_to_visible_text(html)
     out["body_text"] = body_text
-    out["core_summary"] = extractive_core_summary(body_text)
-    fragment = extract_article_html_fragment(html)
-    imgs, vids = extract_body_media(fragment, link)
+    if extract.get("summary"):
+        out["core_summary"] = extractive_core_summary(str(extract["summary"]))
+    else:
+        out["core_summary"] = extractive_core_summary(body_text)
+    imgs, vids = extract_body_media(fragment, body_url)
     if verify_media_urls and (imgs or vids):
-        imgs, vids = filter_reachable_body_media(imgs, vids, link)
+        imgs, vids = filter_reachable_body_media(imgs, vids, body_url)
     out["body_images"] = imgs
     out["body_videos"] = vids
     # 兼容旧字段名
@@ -1301,6 +1338,9 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             p = _feed_priority_value(item.get("priority"))
             if p:
                 row["priority"] = p
+            rk = item.get("render")
+            if rk:
+                row["render"] = str(rk).strip()
             out.append(row)
             continue
         for sub in item.get("feeds") or []:
@@ -1314,8 +1354,26 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             p = _feed_priority_value(sub.get("priority"))
             if p:
                 row["priority"] = p
+            rk = sub.get("render")
+            if rk:
+                row["render"] = str(rk).strip()
             out.append(row)
     return out
+
+
+def load_render_module(base_name: str):
+    """加载 scripts/render/<base_name>.py，须实现 parse_feed(listing_html, *, source_name, listing_url='')。"""
+    script_dir = Path(__file__).resolve().parent
+    path = script_dir / "render" / f"{base_name}.py"
+    if not path.is_file():
+        raise FileNotFoundError(str(path))
+    mod_name = f"rss_digest_render_{base_name}"
+    spec = importlib.util.spec_from_file_location(mod_name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(path.name)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def main() -> int:
@@ -1389,8 +1447,19 @@ def main() -> int:
             unusable_sources.append(f"{name}: missing_url")
             continue
         try:
-            data = fetch_xml(url)
-            parsed_items = parse_feed_items(data, name)
+            render_key = (feed.get("render") or "").strip()
+            if render_key:
+                rmod = load_render_module(render_key)
+                parse_fn = getattr(rmod, "parse_feed", None)
+                if not callable(parse_fn):
+                    raise TypeError(f"render {render_key!r} missing parse_feed()")
+                listing_html = fetch_html_text(url)
+                if listing_html is None:
+                    raise OSError("listing fetch failed (HTML)")
+                parsed_items = parse_fn(listing_html, source_name=name, listing_url=url)
+            else:
+                data = fetch_xml(url)
+                parsed_items = parse_feed_items(data, name)
             matched_items = 0
             prio = _feed_priority_value(feed.get("priority"))
             for item in parsed_items:
@@ -1404,7 +1473,16 @@ def main() -> int:
         except TimeoutError as ex:
             unusable_sources.append(f"{name}: timeout ({ex})")
             errors.append(f"{name} ({url}): {ex}")
-        except (urllib.error.URLError, urllib.error.HTTPError, ET.ParseError, OSError, ValueError) as ex:
+        except (
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+            ET.ParseError,
+            OSError,
+            ValueError,
+            TypeError,
+            FileNotFoundError,
+            ImportError,
+        ) as ex:
             unusable_sources.append(f"{name}: failed ({type(ex).__name__}: {ex})")
             errors.append(f"{name} ({url}): {ex}")
 
