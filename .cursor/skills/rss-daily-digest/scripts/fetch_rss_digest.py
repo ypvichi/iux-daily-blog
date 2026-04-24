@@ -54,6 +54,7 @@ MEDIA_SNIFF_BYTES = 2048
 CATEGORIES: tuple[str, ...] = (
     "要闻",
     "模型发布",
+    "设计生态",
     "开发生态",
     "产品应用",
     "技术与洞察",
@@ -66,6 +67,7 @@ CATEGORIES: tuple[str, ...] = (
 # 顺序与技能说明一致：模型发布 → … → 要闻。
 DISPLAY_TYPES: tuple[str, ...] = (
     "模型发布",
+    "设计生态",
     "开发生态",
     "技术与洞察",
     "产品应用",
@@ -77,6 +79,7 @@ DISPLAY_TYPES: tuple[str, ...] = (
 _DISPLAY_TYPE_PRIORITY: tuple[str, ...] = (
     "模型发布",
     "要闻",
+    "设计生态",
     "开发生态",
     "产品应用",
     "技术与洞察",
@@ -88,6 +91,7 @@ MAX_ITEMS_PER_CATEGORY = 10
 _CAT_PRIORITY: tuple[str, ...] = (
     "模型发布",
     "要闻",
+    "设计生态",
     "开发生态",
     "产品应用",
     "技术与洞察",

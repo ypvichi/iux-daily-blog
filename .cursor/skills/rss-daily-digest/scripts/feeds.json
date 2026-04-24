@@ -26,6 +26,11 @@
         "name": "美团技术团队",
         "url": "https://tech.meituan.com/feed/",
         "priority": 1
+      },{
+        "name": "DAILY AI NEWS",
+        "url": "https://ai-bot.cn/daily-ai-news/",
+        "priority": 100,
+        "render":"DailyAiNewsRender"
       }
     ]
   },
