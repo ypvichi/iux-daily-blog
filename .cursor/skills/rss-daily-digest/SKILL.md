@@ -25,8 +25,8 @@ step1. 核心内容生成
 
 1. **目标日期**：默认使用 **`Asia/Shanghai` 时区下的「今天」**。若用户指定日期，则使用该日期（ISO `YYYY-MM-DD`）。
 2. **执行抓取脚本**（见下文），在仓库根目录运行。脚本会按条目抓取并去重，优先运行脚本以保证输出可复现；仅在脚本无法运行（如网络被拦等）时再手写文件。
-3. **条数与质量**：`rss_articles.md` 里输出的「类型」与条目标题一致（仅对标题做关键词判定）。**每一个类型最多保留 10 条**（可用 `--max-per-category N` 调整）。同类候选项多于 N 时，在同类内按脚本的**质量分**（标题/摘要信息量、去短链与噪声、偏权威站点等）择优，再按时间排序输出；无需为落选条目强写摘要。
-4. **检查**生成文件：去重、按需删掉跑题条目，确认输出字段完整（标题/**类型**/来源/日期/链接/摘要）。
+3. **条数与质量**：`rss_articles.md` 里输出的「类型」与条目标题一致（仅对标题做关键词判定）。**每一个类型最多保留 10 条**（可用 `--max-per-category N` 调整）。同类候选项多于 N 时，在同类内先按订阅源 **`priority`（越大越优先，见 `feeds.json`）**，再按脚本的**质量分**（标题/摘要信息量、去短链与噪声、偏权威站点等）择优，再按时间排序输出；无需为落选条目强写摘要。
+4. **检查**生成文件：去重、按需删掉跑题条目，确认输出字段完整（标题/**类型**/来源/日期/链接/摘要/**图片**/**视频**）。脚本会打开每条「链接」抓取正文（优先 `<article>`/`<main>` 区域），各条**最多 2 张图、2 个视频**（正文中出现顺序）；无需逐条打开网页时可加 `--skip-body-media`。
 
 step2. 内容翻译和中文润色（不要询问用户，直接开始）
 
@@ -46,11 +46,12 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --date 2026-04-20
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --feeds .cursor/skills/rss-daily-digest/scripts/feeds.json
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --max-per-category 8
+python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-media
 ```
 
 依赖：**Python 3.10+**，**仅标准库**（无需 `pip install`）。
 
-## 输出结构
+## 输出 articles
 
 严格按下列块状 Markdown 骨架输出：
 
@@ -72,14 +73,42 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --max-per-cat
 （脚本对标题做关键词打分；无法归类时默认为 **其他**。）
 
 要求：
-- 每条固定 7 行字段（标题/类型/来源/日期/链接/摘要）+ 1 行分隔线。
-- 为空时使用占位：`（无标题）`、`（未知来源）`、`（无链接）`、`（无摘要）`。
+- 每条在摘要之后有 **图片**、**视频** 两行；各含最多 2 个 URL（`；` 分隔），无则 `（无）`；其余为标题/类型/来源/日期/链接/摘要 + 1 行分隔线。
+- 为空时使用占位：`（无标题）`、`（未知来源）`、`（无链接）`、`（无摘要）`；图片/视频行无资源时为 `（无）`。
 - 生成文件名统一为：`temp/<YYYY-MM-DD>/rss_articles.md`。
+
+## 输出 发布公告
+
+生成发布公告，保存为：`temp/<YYYY-MM-DD>/message.md`示例如下：
+
+```markdown
+
+📰 IUX AI Daily 
+| AI早报速递 | 2026-04-20 |
+============================
+
+📌 原文：2026-04-20
+
+🤖 AI 总结：
+
+2026年4月16日
+
+<最多7条比较重要的新闻标题>
+1.  Google发布Gemini 3.1 Flash TTS模型，优化文本转语音性能。
+2.  xxx
+...
+7.  xxx
+
+
+============================
+🔗 原文链接：https://ypvichi.github.io/iux-ai-daily//post/2026-04-20/
+
+```
 
 
 ## 订阅源列表
 
-默认精选列表见 [scripts/feeds.json](scripts/feeds.json)。编辑者可增删源（名称 + url）。若某源返回 403 或为空，可换该站其他官方 RSS 地址，或从列表中移除。
+默认精选列表见 [scripts/feeds.json](scripts/feeds.json)。编辑者可增删源（名称 + url，可选 **`priority`**：非负整数，**数值越大越优先**——同类截断时优先保留高 priority 源的条目；重复链接去重时保留 priority 更高的一条）。若某源返回 403 或为空，可换该站其他官方 RSS 地址，或从列表中移除。
 
 更多来源与排错说明见 [reference.md](reference.md)。
 

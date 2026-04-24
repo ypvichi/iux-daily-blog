@@ -4,7 +4,12 @@ Fetch multiple RSS/Atom feeds, keep entries whose published time falls on the
 target calendar day (Asia/Shanghai), write markdown to temp/YYYY-MM-DD/rss_articles.md.
 
 Per display type (classify_by_title, same as the written 类型 field), keep at
-most N entries; within each type, pick by quality_score then sort by time.
+most N entries; within each type, pick by feed priority (feeds.json `priority`,
+higher first), then quality_score, then sort by time.
+
+Optionally fetches each article URL and extracts up to two images and two
+videos from the main article content (see ARTICLE_MAX_IMAGES/ARTICLE_MAX_VIDEOS;
+use --skip-body-media to disable). Extracted image URLs are not validated over HTTP.
 """
 
 from __future__ import annotations
@@ -34,6 +39,9 @@ USER_AGENT = (
 )
 FEED_TIMEOUT_SECONDS = 12.0
 FETCH_TIMEOUT_SECONDS = 18.0
+# 正文内媒体：自每个文章页各取最多 N 个（优先 <article>/<main> 内顺序）。
+ARTICLE_MAX_IMAGES = 2
+ARTICLE_MAX_VIDEOS = 2
 
 # 八类归纳：要闻、模型发布、开发生态、产品应用、技术与洞察、行业生态、前瞻与传闻、其他。
 # 展示顺序；分类冲突时用 _CAT_PRIORITY 决胜（特异性优先）。
@@ -430,6 +438,26 @@ class _StripScriptsStyles(HTMLParser):
         return re.sub(r"\s+", " ", "".join(self._chunks)).strip()
 
 
+def extract_article_html_fragment(full_html: str) -> str:
+    """
+    优先截取正文区域 HTML，用于在正文中取图/视频（避免导航栏等无关图）。
+    顺序：article 内 > main 内 > body 内 > 去掉 head 后的全文。
+    """
+    if not full_html:
+        return ""
+    h = re.sub(r"(?is)<head[^>]*>.*?</head>", " ", full_html)
+    m = re.search(r"(?is)<article[^>]*>(.*)</article>", h, re.DOTALL)
+    if m:
+        return m.group(1) or ""
+    m = re.search(r"(?is)<main[^>]*>(.*)</main>", h, re.DOTALL)
+    if m:
+        return m.group(1) or ""
+    m = re.search(r"(?is)<body[^>]*>(.*)</body>", h, re.DOTALL)
+    if m:
+        return m.group(1) or ""
+    return h
+
+
 def html_to_visible_text(html: str) -> str:
     """Strip tags roughly; keep readable body text for excerpt/summary."""
     if not html:
@@ -439,11 +467,11 @@ def html_to_visible_text(html: str) -> str:
     html = re.sub(r"(?is)<style[^>]*>.*?</style>", " ", html)
     html = re.sub(r"(?is)<noscript[^>]*>.*?</noscript>", " ", html)
     # Prefer <article> or <main> if present
-    art = re.search(r"(?is)<article[^>]*>(.*?)</article>", html)
+    art = re.search(r"(?is)<article[^>]*>(.*?)</article>", html, re.DOTALL)
     if art:
         html = art.group(1)
     else:
-        main = re.search(r"(?is)<main[^>]*>(.*?)</main>", html)
+        main = re.search(r"(?is)<main[^>]*>(.*?)</main>", html, re.DOTALL)
         if main:
             html = main.group(1)
     p = _StripScriptsStyles()
@@ -487,42 +515,194 @@ def extractive_core_summary(text: str, max_sentences: int = 5, max_chars: int = 
     return s
 
 
-_IMG_SRC_RE = re.compile(
-    r"""<img[^>]+src\s*=\s*["']([^"']+)["']""",
-    re.IGNORECASE,
-)
+def _first_url_from_srcset(srcset: str | None) -> str | None:
+    if not srcset or not srcset.strip():
+        return None
+    part = srcset.split(",")[0].strip().split()
+    if part:
+        return part[0].strip() or None
+    return None
 
 
-def extract_inline_images(html: str, base_url: str, max_n: int = 2) -> list[str]:
-    """Resolve up to max_n http(s) image URLs from HTML; skip data/blob/tracking heuristics."""
-    if not html or not base_url:
-        return []
-    seen: set[str] = set()
-    out: list[str] = []
-    for m in _IMG_SRC_RE.finditer(html):
-        src = (m.group(1) or "").strip()
-        if not src or src.startswith(("data:", "blob:")):
-            continue
-        abs_u = urljoin(base_url, src)
-        if not abs_u.startswith(("http://", "https://")):
-            continue
-        low = abs_u.lower()
-        if any(x in low for x in ("pixel", "tracking", "spacer", "1x1", "beacon", "analytics")):
-            continue
-        if abs_u in seen:
-            continue
-        seen.add(abs_u)
-        out.append(abs_u)
-        if len(out) >= max_n:
-            break
-    return out
+def _img_url_from_attrs(attrs: dict[str, str]) -> str | None:
+    """Prefer real image URL; many站点用 data-src / srcset 懒加载。"""
+    low_keys = {k.lower(): v for k, v in attrs.items()}
+    for key in (
+        "src",
+        "data-src",
+        "data-lazy-src",
+        "data-original",
+        "data-actualsrc",
+        "data-img",
+    ):
+        v = (low_keys.get(key) or "").strip()
+        if v and not v.startswith(("data:", "blob:", "about:")):
+            return v
+    ss = _first_url_from_srcset(low_keys.get("srcset"))
+    if ss and not ss.startswith(("data:", "blob:")):
+        return ss
+    return None
+
+
+def _bad_image_url(abs_u: str) -> bool:
+    """Heuristic: 排除追踪像素、站头/导航、二维码等常见非正文图。"""
+    low = abs_u.lower()
+    if any(
+        x in low
+        for x in (
+            "pixel",
+            "tracking",
+            "spacer",
+            "1x1",
+            "beacon",
+            "analytics",
+            "favicon",
+            "logo.svg",
+            "/icon",
+            "qrcode",
+            "qr_code",
+            "ewm",  # 部分站点
+            "common-images",  # 如早报/栏目配图条
+            "imagesnew/head",  # 量子位等主题站头
+            "avatar",
+            "gravatar",
+        )
+    ):
+        return True
+    if re.search(
+        r"(?:head|header|nav|logo|ad-|ads-|banner|sponsor|share-icon)[^/]*\.(?:png|gif|jpe?g|webp)(?:\?|$)",
+        low,
+    ):
+        return True
+    if re.search(r"(?:^|/)(?:loader|loading|placeholder|blank)\.(?:png|gif|webp?)(?:\?|$)", low):
+        return True
+    return False
+
+
+def _embed_video_url(abs_u: str) -> bool:
+    low = abs_u.lower()
+    if any(
+        h in low
+        for h in (
+            "youtube.com/embed",
+            "youtube-nocookie.com",
+            "youtu.be/",
+            "vimeo.com",
+            "player.vimeo.com",
+            "bilibili.com",
+            "bilivideo.com",
+            "v.qq.com",
+            "youku.com",
+            "iqiyi.com",
+        )
+    ):
+        return True
+    if re.search(r"\.(?:m3u8|mp4|webm)(?:\?|$)", low):
+        return True
+    return False
+
+
+class _BodyMediaParser(HTMLParser):
+    """自正文顺序收集 <img>、<video>/<source>、嵌入视频 <iframe>。"""
+
+    _SKIP = frozenset({"script", "style", "noscript", "template", "head"})
+    # 仅对语义化标签成对跳过节选（避免 class 与闭合标签难配对）
+    _SKIP_BOILERPLATE = frozenset({"header", "nav", "aside", "footer"})
+
+    def __init__(self, base_url: str, max_images: int, max_videos: int) -> None:
+        super().__init__(convert_charrefs=True)
+        self._base = base_url
+        self._max_img = max_images
+        self._max_vid = max_videos
+        self.images: list[str] = []
+        self.videos: list[str] = []
+        self._seen_img: set[str] = set()
+        self._seen_vid: set[str] = set()
+        self._skip_depth = 0
+        self._boiler_depth = 0
+        self._svg_depth = 0
+        self._video_depth = 0
+
+    def _resolve(self, raw: str | None) -> str | None:
+        if not raw or not raw.strip():
+            return None
+        u = urljoin(self._base, raw.strip())
+        if not u.startswith(("http://", "https://")):
+            return None
+        return u
+
+    def handle_starttag(self, tag: str, attrs) -> None:  # noqa: ANN001
+        t = tag.lower()
+        ad = {a[0].lower(): (a[1] or "") for a in attrs}
+        if t in self._SKIP:
+            self._skip_depth += 1
+        if t == "svg":
+            self._svg_depth += 1
+        if t in self._SKIP_BOILERPLATE:
+            self._boiler_depth += 1
+        if self._skip_depth > 0 or self._svg_depth > 0 or self._boiler_depth > 0:
+            return
+        if t == "video":
+            self._video_depth += 1
+            if len(self.videos) < self._max_vid:
+                raw = (ad.get("src") or ad.get("data-src") or "").strip()
+                u = self._resolve(raw)
+                if u and u not in self._seen_vid:
+                    low = u.lower()
+                    if _embed_video_url(u) or re.search(
+                        r"\.(?:mp4|webm|m3u8|ogv)(?:\?|$)", low
+                    ):
+                        self._seen_vid.add(u)
+                        self.videos.append(u)
+        elif t == "source" and self._video_depth > 0 and len(self.videos) < self._max_vid:
+            u = self._resolve((ad.get("src") or "").strip())
+            if u and u not in self._seen_vid:
+                self._seen_vid.add(u)
+                self.videos.append(u)
+        elif t == "iframe" and len(self.videos) < self._max_vid:
+            u = self._resolve((ad.get("src") or ad.get("data-src") or "").strip())
+            if u and _embed_video_url(u) and u not in self._seen_vid:
+                self._seen_vid.add(u)
+                self.videos.append(u)
+        elif t == "img" and len(self.images) < self._max_img:
+            raw = _img_url_from_attrs(ad)
+            u = self._resolve(raw)
+            if u and not _bad_image_url(u) and u not in self._seen_img:
+                self._seen_img.add(u)
+                self.images.append(u)
+
+    def handle_endtag(self, tag: str) -> None:
+        t = tag.lower()
+        if t in self._SKIP and self._skip_depth > 0:
+            self._skip_depth -= 1
+        if t in self._SKIP_BOILERPLATE and self._boiler_depth > 0:
+            self._boiler_depth -= 1
+        if t == "svg" and self._svg_depth > 0:
+            self._svg_depth -= 1
+        if t == "video" and self._video_depth > 0:
+            self._video_depth -= 1
+
+
+def extract_body_media(html_fragment: str, base_url: str) -> tuple[list[str], list[str]]:
+    """自正文 HTML 片段解析图片、视频 URL（各最多 N 条，顺序为文中出现顺序）。"""
+    if not html_fragment or not base_url:
+        return [], []
+    p = _BodyMediaParser(base_url, ARTICLE_MAX_IMAGES, ARTICLE_MAX_VIDEOS)
+    try:
+        p.feed(html_fragment)
+        p.close()
+    except Exception:  # noqa: BLE001 — 容错
+        return [], []
+    return p.images[: ARTICLE_MAX_IMAGES], p.videos[: ARTICLE_MAX_VIDEOS]
 
 
 def enrich_entry_with_body(entry: dict) -> dict:
-    """Fetch link HTML, add body_text, core_summary, core_images (best-effort)."""
+    """Fetch link HTML，追加 body_text、core_summary、正文内图片/视频（best-effort）。"""
     link = (entry.get("link") or "").strip()
     out = dict(entry)
     out["body_error"] = None
+    out["body_images"] = []
+    out["body_videos"] = []
     html = fetch_html_text(link)
     if html is None:
         out["body_error"] = "fetch_failed"
@@ -530,7 +710,12 @@ def enrich_entry_with_body(entry: dict) -> dict:
     body_text = html_to_visible_text(html)
     out["body_text"] = body_text
     out["core_summary"] = extractive_core_summary(body_text)
-    out["core_images"] = extract_inline_images(html, link, max_n=2)
+    fragment = extract_article_html_fragment(html)
+    imgs, vids = extract_body_media(fragment, link)
+    out["body_images"] = imgs
+    out["body_videos"] = vids
+    # 兼容旧字段名
+    out["core_images"] = imgs
     if not out["core_summary"]:
         out["body_error"] = "empty_text"
     return out
@@ -611,18 +796,6 @@ def date_in_shanghai(dt: datetime | None) -> date | None:
     if dt is None:
         return None
     return dt.astimezone(TZ_SH).date()
-
-
-def dedupe(entries: list[dict]) -> list[dict]:
-    seen: set[tuple[str, str]] = set()
-    out: list[dict] = []
-    for e in entries:
-        key = (e["link"] or "", e["title"] or "")
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(e)
-    return out
 
 
 def _safe_text(s: str | None) -> str:
@@ -821,10 +994,49 @@ def quality_score_entry(entry: dict) -> float:
     return s
 
 
+def _feed_priority_value(raw: object) -> int:
+    """Non-negative int; larger = higher priority. Invalid/missing → 0."""
+    if raw is None or isinstance(raw, bool):
+        return 0
+    if isinstance(raw, int):
+        return max(0, raw)
+    if isinstance(raw, float):
+        return max(0, int(raw))
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return 0
+        try:
+            return max(0, int(s, 10))
+        except ValueError:
+            return 0
+    return 0
+
+
+def dedupe(entries: list[dict]) -> list[dict]:
+    """Drop duplicate (link, title); keep the copy with higher feed_priority, then quality."""
+    best: dict[tuple[str, str], dict] = {}
+    order: list[tuple[str, str]] = []
+    for e in entries:
+        key = (e.get("link") or "", e.get("title") or "")
+        if key not in best:
+            best[key] = e
+            order.append(key)
+            continue
+        old = best[key]
+        pe = _feed_priority_value(e.get("feed_priority"))
+        po = _feed_priority_value(old.get("feed_priority"))
+        if pe > po:
+            best[key] = e
+        elif pe == po and quality_score_entry(e) > quality_score_entry(old):
+            best[key] = e
+    return [best[k] for k in order]
+
+
 def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]:
     """
     与输出字段「类型」一致（仅 `classify_by_title`），每类最多保留 max_per 条；
-    同类内按 quality_score_entry 降序择优，再按发布时间升序输出整篇列表。
+    同类内按 feed_priority（越大越优先）、quality_score_entry 降序择优，再按发布时间升序输出整篇列表。
     """
     if max_per <= 0:
         return []
@@ -838,6 +1050,7 @@ def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]
         group = buckets.get(cat, [])
         group.sort(
             key=lambda e: (
+                -_feed_priority_value(e.get("feed_priority")),
                 -quality_score_entry(e),
                 -(e.get("published") or datetime.min.replace(tzinfo=timezone.utc)).timestamp(),
             )
@@ -848,6 +1061,13 @@ def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]
         key=lambda e: e.get("published") or datetime.min.replace(tzinfo=timezone.utc)
     )
     return selected
+
+
+def _format_media_line(label: str, urls: list[str] | None) -> str:
+    u = [x.strip() for x in (urls or []) if (x or "").strip()]
+    if not u:
+        return f"{label}: （无）"
+    return f"{label}: " + "；".join(_safe_text(x) for x in u)
 
 
 def write_markdown(
@@ -865,6 +1085,14 @@ def write_markdown(
         else:
             published_str = ""
         summary = _safe_text(e.get("summary")) or "（无摘要）"
+        raw_im = e.get("body_images")
+        imgs: list[str] = [str(x) for x in (raw_im if isinstance(raw_im, list) else []) if x]
+        if not imgs:
+            ci = e.get("core_images")
+            if isinstance(ci, list):
+                imgs = [str(x) for x in ci if x]
+        raw_v = e.get("body_videos")
+        vids: list[str] = raw_v if isinstance(raw_v, list) else []
 
         lines.append(f"【{i}】")
         lines.append(f"标题: {title}")
@@ -873,6 +1101,8 @@ def write_markdown(
         lines.append(f"日期: {published_str}")
         lines.append(f"链接: {link}")
         lines.append(f"摘要: {summary}")
+        lines.append(_format_media_line("图片", imgs))
+        lines.append(_format_media_line("视频", vids))
         lines.append("--------------------------------------------------------------")
 
     if lines:
@@ -882,19 +1112,24 @@ def write_markdown(
     out_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
-def flatten_feeds_config(feeds_data: list) -> list[dict[str, str]]:
+def flatten_feeds_config(feeds_data: list) -> list[dict]:
     """
     支持两种 feeds.json 形态：
-    - 嵌套：顶层为各类别 { "name", "feeds": [ { "name", "url" }, ... ] }，展平为单列表拉取。
-    - 旧版：顶层直接为 { "name", "url" }。
+    - 嵌套：顶层为各类别 { "name", "feeds": [ { "name", "url", "priority"? }, ... ] }，展平为单列表拉取。
+    - 旧版：顶层直接为 { "name", "url", "priority"? }。
+    priority 为可选非负整数，数值越大该源越优先（抓取顺序与同类截断择优均考虑）。
     """
-    out: list[dict[str, str]] = []
+    out: list[dict] = []
     for item in feeds_data:
         if not isinstance(item, dict):
             continue
         if item.get("url"):
             n = (item.get("name") or urlparse(str(item.get("url", ""))).netloc or "unknown").strip()
-            out.append({"name": n, "url": str(item["url"]).strip()})
+            row: dict = {"name": n, "url": str(item["url"]).strip()}
+            p = _feed_priority_value(item.get("priority"))
+            if p:
+                row["priority"] = p
+            out.append(row)
             continue
         for sub in item.get("feeds") or []:
             if not isinstance(sub, dict):
@@ -903,7 +1138,11 @@ def flatten_feeds_config(feeds_data: list) -> list[dict[str, str]]:
             if not u:
                 continue
             n = (sub.get("name") or item.get("name") or urlparse(str(u)).netloc or "unknown").strip()
-            out.append({"name": n, "url": str(u).strip()})
+            row = {"name": n, "url": str(u).strip()}
+            p = _feed_priority_value(sub.get("priority"))
+            if p:
+                row["priority"] = p
+            out.append(row)
     return out
 
 
@@ -932,7 +1171,12 @@ def main() -> int:
         type=int,
         default=MAX_ITEMS_PER_CATEGORY,
         metavar="N",
-        help=f"每类「类型」最多保留条数，同类内按质量分择优（默认 {MAX_ITEMS_PER_CATEGORY}）",
+        help=f"每类「类型」最多保留条数，同类内按 feeds.json 的 priority（高优先）、再按质量分择优（默认 {MAX_ITEMS_PER_CATEGORY}）",
+    )
+    parser.add_argument(
+        "--skip-body-media",
+        action="store_true",
+        help="不逐条打开链接抓取正文内图片/视频（仅 RSS 摘要，生成更快）",
     )
     args = parser.parse_args()
 
@@ -950,6 +1194,12 @@ def main() -> int:
         print("Error: feeds.json must be a JSON array.", file=sys.stderr)
         return 1
     feed_list = flatten_feeds_config(feeds_raw)
+    feed_list.sort(
+        key=lambda f: (
+            -_feed_priority_value(f.get("priority")),
+            (f.get("name") or "").lower(),
+        )
+    )
     all_entries: list[dict] = []
     errors: list[str] = []
     usable_sources: list[str] = []
@@ -965,10 +1215,13 @@ def main() -> int:
             data = fetch_xml(url)
             parsed_items = parse_feed_items(data, name)
             matched_items = 0
+            prio = _feed_priority_value(feed.get("priority"))
             for item in parsed_items:
                 d = date_in_shanghai(item.get("published"))
                 if d == target:
-                    all_entries.append(item)
+                    row = dict(item)
+                    row["feed_priority"] = prio
+                    all_entries.append(row)
                     matched_items += 1
             usable_sources.append(f"{name}: ok (parsed={len(parsed_items)}, matched={matched_items})")
         except TimeoutError as ex:
@@ -983,12 +1236,20 @@ def main() -> int:
     cap = max(0, int(args.max_per_category))
     all_entries = select_top_per_display_type(all_entries, cap)
 
+    if not args.skip_body_media:
+        all_entries = [enrich_entry_with_body(e) for e in all_entries]
+
     out_file = repo_root / "temp" / target.isoformat() / "rss_articles.md"
     write_markdown(out_file, all_entries)
 
+    extra = ""
+    if not args.skip_body_media:
+        extra = f" body_media=on (<= {ARTICLE_MAX_IMAGES} imgs / {ARTICLE_MAX_VIDEOS} videos per item)"
+    else:
+        extra = " body_media=off (--skip-body-media)"
     print(
         f"Wrote {out_file} ({len(all_entries)} items, "
-        f"max {cap} per display type, ranked by quality_score)."
+        f"max {cap} per display type, ranked by feed priority then quality_score).{extra}"
     )
     print(
         "Source summary:"

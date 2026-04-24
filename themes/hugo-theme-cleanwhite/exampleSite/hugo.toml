@@ -63,7 +63,7 @@ home = ["HTML", "RSS", "Algolia"]
 
   # Artalk comments
   # Follow https://artalk.js.org/ to set up your own server
-  artalk_enable = true
+  artalk_enable = false
   artalk_server = "https://xxx.xxx.com"
   artalk_site = "xxx blog"
 

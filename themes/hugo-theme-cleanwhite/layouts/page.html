@@ -1,7 +1,11 @@
-
 {{ define "main" }}
+<div class="anchor-container">
+    <ul class="anchor-list-container">
+    </ul>
+</div>
 <!-- Post Content -->
 <article>
+    
     <div class="container" style="display: flex;justify-content: center;">
         <div class="row" style="background-color: #ffffff;display: inline-block;margin: 0 auto;padding: 0 20px;">
             <!-- Post Container -->
@@ -11,30 +15,53 @@
             col-sm-12
             col-xs-12
             post-container">
-            {{ if eq (.Param "multilingual") true }}
+                {{ if eq (.Param "multilingual") true }}
                 {{ partial "multilingual-sel.html" . }}
 
                 <!-- Chinese Version -->
                 <div class="zh post-container">
-                    {{$file :=  "/about/index-zh.md"}}
+                    {{$file := "/about/index-zh.md"}}
                     {{ $file | readFile | markdownify}}
                 </div>
-            
+
                 <!-- English Version -->
                 <div class="en post-container">
                     {{ .Content }}
                 </div>
-            {{ else }}
+                {{ else }}
                 {{ .Content }}
-            {{ end }}
-             
-            {{ partial "comments.html" . }}
-            
+                {{ end }}
+
+                {{ partial "comments.html" . }}
+
             </div>
         </div>
     </div>
 </article>
 
+<script>
+    setTimeout(() => {
+        const container = document.querySelector('article .post-container');
+        const h1 = container.querySelector('h1');
+        const h2 = container.querySelectorAll('h2');
+
+        const ul1 = document.querySelector('.anchor-list-container');
+        const ul2 = document.querySelector('.anchor-list');
+
+        if (h1) {
+            ul1.innerHTML = `<li><a href="#${h1.id}">${h1.textContent}</a></li>` + ul1.innerHTML;
+            let temp = `<div>`;
+            if (h2?.length) {
+                [...h2].forEach(h => {
+                    temp += `<li><a href="#${h.id}">${h.textContent}</a></li>`;
+                });
+            }
+            temp += `</div>`;
+            ul1.innerHTML += temp;
+        }
+
+    }, 1000);
+</script>
+
+
 {{ end }}
-
-
