@@ -19,7 +19,8 @@ render/ModuleBaseName.py：须实现 parse_feed(listing_html, *, source_name,
 listing_url="") -> list[dict]（字段与 RSS 条目一致）。可选在同名类 ModuleBaseName
 上实现 enrich(html, link, entry) -> dict，对单页再提取 title/summary/
 html_fragment_for_media；条目可设 feed_render 以启用该类。条目可含 body_fetch_url：
-正文配图抓取使用该 URL 而非 link。
+正文配图抓取使用该 URL 而非 link。可为某项设置 "articleClassName"：正文内
+图片/视频仅从该 class 的节点内收集（不依赖通用 article/main 截取）。
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from html import unescape
+from html import escape as html_escape, unescape
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -476,6 +477,135 @@ def extract_article_html_fragment(full_html: str) -> str:
     return h
 
 
+_VOID_HTML5 = frozenset(
+    {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
+)
+
+
+def _class_attr_has_token(class_attr: str | None, token: str) -> bool:
+    if not class_attr or not (token or "").strip():
+        return False
+    want = token.strip()
+    if not want:
+        return False
+    parts = class_attr.split()
+    if want in parts:
+        return True
+    # e.g. articleClassName "foo bar" means element must have both classes
+    toks = [t for t in want.split() if t]
+    return bool(toks) and all(t in parts for t in toks)
+
+
+def _serialize_start_tag_for_fragment(tag: str, attrs) -> str:  # noqa: ANN001
+    tlow = tag.lower()
+    parts: list[str] = [tlow]
+    for name, value in attrs:
+        if value is None:
+            parts.append((name or "").lower())
+        else:
+            q = html_escape(str(value), quote=True)
+            parts.append(f'{(name or "").lower()}="{q}"')
+    return "<" + " ".join(parts) + ">"
+
+
+class _ClassInnerHtmlCollector(HTMLParser):
+    """
+    取文档中**第一个** class 列表匹配给定 token 的元素的 inner HTML（不含该元素起止标签）。
+    """
+
+    def __init__(self, class_token: str) -> None:
+        super().__init__(convert_charrefs=True)
+        self._token = (class_token or "").strip()
+        self._seeking = True
+        self._finished = False
+        self._buf: list[str] = []
+        self._stack: list[str] = []
+
+    def _class_ok(self, attrs) -> bool:  # noqa: ANN001
+        for name, value in attrs:
+            if (name or "").lower() == "class":
+                return _class_attr_has_token(value, self._token)
+        return False
+
+    def handle_starttag(self, tag: str, attrs) -> None:  # noqa: ANN001
+        t = tag.lower()
+        if self._finished:
+            return
+        if self._seeking:
+            if t in _VOID_HTML5:
+                return
+            if self._class_ok(attrs):
+                self._seeking = False
+                self._stack = [t]
+            return
+        if not self._stack:
+            return
+        if t in _VOID_HTML5:
+            self._buf.append(_serialize_start_tag_for_fragment(tag, attrs))
+            return
+        self._stack.append(t)
+        self._buf.append(_serialize_start_tag_for_fragment(tag, attrs))
+
+    def handle_endtag(self, tag: str) -> None:
+        t = tag.lower()
+        if self._finished or self._seeking or not self._stack:
+            return
+        if t != self._stack[-1]:
+            return
+        self._stack.pop()
+        if not self._stack:
+            self._finished = True
+            return
+        self._buf.append(f"</{t}>")
+
+    def handle_data(self, data: str) -> None:
+        if self._finished or self._seeking or not self._stack:
+            return
+        if data:
+            self._buf.append(data)
+
+    def inner_html(self) -> str:
+        return "".join(self._buf).strip()
+
+    def matched(self) -> bool:
+        return not self._seeking
+
+
+def extract_html_fragment_by_class_name(full_html: str, class_name: str) -> str:
+    """
+    从 full_html 中取第一个 `class` 含 class_name 对应 token（空格分词为类列表）的元素的 inner HTML。
+    找不到则返回空串（不回落到全页，避免采到侧栏/头部图）。若已匹配到元素但
+    未遇闭合标签，仍返回已采集的片段（供容错）。
+    """
+    cn = (class_name or "").strip()
+    if not full_html or not cn:
+        return ""
+    p = _ClassInnerHtmlCollector(cn)
+    try:
+        p.feed(full_html)
+        p.close()
+    except Exception:  # noqa: BLE001
+        return ""
+    if p.matched():
+        return p.inner_html()
+    return ""
+
+
 def html_to_visible_text(html: str) -> str:
     """Strip tags roughly; keep readable body text for excerpt/summary."""
     if not html:
@@ -904,9 +1034,15 @@ def enrich_entry_with_body(entry: dict, *, verify_media_urls: bool = True) -> di
         except Exception:  # noqa: BLE001 — 单站 enrich 失败则回退通用逻辑
             extract = {}
 
-    fragment = (extract.get("html_fragment_for_media") or "").strip() or extract_article_html_fragment(
-        html
-    )
+    fr_media = (extract.get("html_fragment_for_media") or "").strip()
+    if fr_media:
+        fragment = fr_media
+    else:
+        acn = (out.get("article_class_name") or "").strip()
+        if acn:
+            fragment = extract_html_fragment_by_class_name(html, acn)
+        else:
+            fragment = extract_article_html_fragment(html)
     if extract.get("title"):
         out["title"] = str(extract["title"]).strip()
     if extract.get("summary"):
@@ -1327,6 +1463,7 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
     - 嵌套：顶层为各类别 { "name", "feeds": [ { "name", "url", "priority"? }, ... ] }，展平为单列表拉取。
     - 旧版：顶层直接为 { "name", "url", "priority"? }。
     priority 为可选非负整数，数值越大该源越优先（抓取顺序与同类截断择优均考虑）。
+    另可为单源设置 "articleClassName"：只在该 class 的节点内取正文图/视频。
     """
     out: list[dict] = []
     for item in feeds_data:
@@ -1341,6 +1478,9 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             rk = item.get("render")
             if rk:
                 row["render"] = str(rk).strip()
+            acn = item.get("articleClassName") or item.get("article_class_name")
+            if isinstance(acn, str) and acn.strip():
+                row["article_class_name"] = acn.strip()
             out.append(row)
             continue
         for sub in item.get("feeds") or []:
@@ -1357,6 +1497,9 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             rk = sub.get("render")
             if rk:
                 row["render"] = str(rk).strip()
+            acn = sub.get("articleClassName") or sub.get("article_class_name")
+            if isinstance(acn, str) and acn.strip():
+                row["article_class_name"] = acn.strip()
             out.append(row)
     return out
 
@@ -1467,6 +1610,9 @@ def main() -> int:
                 if d == target:
                     row = dict(item)
                     row["feed_priority"] = prio
+                    acn = (feed.get("article_class_name") or feed.get("articleClassName") or "").strip()
+                    if acn:
+                        row["article_class_name"] = acn
                     all_entries.append(row)
                     matched_items += 1
             usable_sources.append(f"{name}: ok (parsed={len(parsed_items)}, matched={matched_items})")

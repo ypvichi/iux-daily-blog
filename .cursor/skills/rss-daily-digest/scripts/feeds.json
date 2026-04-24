@@ -5,12 +5,8 @@
       {
         "name": "量子位",
         "url": "https://www.qbitai.com/feed",
-        "priority": 4
-      },
-      {
-         "name": "机器之心",
-         "url": "https://syncedreview.com/feed/",
-         "priority": 3
+        "priority": 4,
+        "articleClassName":"article"
       },
       {
         "name": "爱范儿",

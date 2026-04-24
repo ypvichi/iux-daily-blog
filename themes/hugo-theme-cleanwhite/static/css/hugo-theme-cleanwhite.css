@@ -1364,7 +1364,10 @@ h3 {
     padding: 5px 0;
 }
 
-.post-container>h2+ul+p+ul a {
+.post-container>h2+ul+p+ul a,
+.post-container>h2+ul+p+p+ul a,
+.post-container>h2+ul+p+p+p+ul a,
+.post-container>h2+ul+p+p+p+p+ul a {
     color: rgb(4, 141, 61);
     font-weight: normal;
 }
