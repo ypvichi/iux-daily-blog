@@ -25,7 +25,7 @@ step1. 核心内容生成
 
 1. **目标日期**：默认使用 **`Asia/Shanghai` 时区下的「今天」**。若用户指定日期，则使用该日期（ISO `YYYY-MM-DD`）。
 2. **执行抓取脚本**（见下文），在仓库根目录运行。脚本会按条目抓取并去重，优先运行脚本以保证输出可复现；仅在脚本无法运行（如网络被拦等）时再手写文件。
-3. **条数与质量**：`rss_articles.md` 里输出的「类型」与条目标题一致（仅对标题做关键词判定）。**合并去重后，每个数据源（订阅源）最多保留 5 条**当日条目（可用 `--max-per-feed M` 调整；同源内按质量分与发布时间择优）。**每一个类型最多保留 15 条**（可用 `--max-per-category N` 调整）。类型内候选项多于 N 时，在同类内先按订阅源 **`priority`（越大越优先，见 `feeds.json`）**，再按脚本的**质量分**择优，再按时间排序输出；无需为落选条目强写摘要。
+3. **条数与质量**：`rss_articles.md` 里输出的「类型」与条目标题一致（仅对标题做关键词判定）。**合并去重后，每个数据源（订阅源）最多保留 5 条**当日条目（可用 `--max-per-feed M` 调整；同源内按质量分与发布时间择优）。**默认不对「类型」做条数上限**；若需截断，可用 `--max-per-category N`（N>0 时每类最多 N 条）。启用截断时，在同类内先按订阅源 **`priority`（越大越优先，见 `feeds.json`）**，再按时间排序输出；无需为落选条目强写摘要。
 4. **检查**生成文件：去重、按需删掉跑题条目，确认输出字段完整（标题/**类型**/来源/日期/链接/摘要/**图片**/**视频**）。脚本会打开每条「链接」抓取正文（优先 `<article>`/`<main>` 区域），各条**最多 2 张图、2 个视频**（正文中出现顺序）；无需逐条打开网页时可加 `--skip-body-media`。
 
 step2. 内容翻译和中文润色（不要询问用户，直接开始）
@@ -33,6 +33,22 @@ step2. 内容翻译和中文润色（不要询问用户，直接开始）
 1. **中文表述**：将**每条标题、摘要** 都通过 翻译为自然、准确的 中文（链接 URL 不变；无摘要可省略「摘要」行）。
 
 step3. 输出 `articles` 和 `发布公告`
+
+step4. 综合 `rss_articles.md` 的内容，生成最终完整的日报md `content/post/<YYYY-MM-DD>.md`
+
+1. 如果遇到多条表达的是 同一件事情，或者相同的资讯内容的，根据数据源的优先级，选取一条即可
+2. 每种类型最多取10条高价值的新闻，如果不足10条，则全用
+3. 严格按以下类型列表顺序生成类型标题：
+```text
+"模型发布",
+"设计生态",
+"开发生态",
+"产品应用",
+"技术与洞察",
+"行业生态",
+"前瞻与传闻",
+"其他要闻"
+```
 
 ## 命令
 
@@ -47,7 +63,8 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py
 ```bash
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --date 2026-04-20
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --feeds .cursor/skills/rss-daily-digest/scripts/feeds.json
-python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --max-per-feed 5 --max-per-category 15
+python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --max-per-feed 5
+python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --max-per-category 10
 python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-media
 ```
 
@@ -89,8 +106,8 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 | AI早报速递 | 2026-04-20 |
 ============================
 
-🥰 大家好，我是你们的助理小美，今天是<日期>，<农历xxx>
-   <杭州天气预报>,为您带来今日AI领域相关报道
+🥰 大家好，我是你们的助理哥，今天是<日期>，<农历xxx>
+   <杭州今日天气预报>,为您带来今日AI报道
 
 2026年4月16日
 

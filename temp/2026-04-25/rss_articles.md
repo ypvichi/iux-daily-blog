@@ -1,30 +1,30 @@
 【1】
-标题: Building Workforce AI Agents with Visier and Amazon Quick
+标题: 用 Visier 与 Amazon Quick 经 MCP 为知识工作者打造统一职场智能体工作区
 类型: 要闻
 来源: AWS Blog
 日期: 2026-04-25 02:04:20
 链接: https://aws.amazon.com/blogs/machine-learning/building-workforce-ai-agents-with-visier-and-amazon-quick/
-摘要: In this post, we show how connecting the Visier Workforce AI platform with Amazon Quick through Model Context Protocol (MCP) gives every knowledge worker a unified agentic workspace to ask questions in. Visier helps ground the workspace in live workforce data and the organizational context that surrounds it while letting your users act on the conversational results without switching tools.
+摘要: 文章说明将 Visier Workforce AI 与 Amazon Quick 通过 Model Context Protocol（MCP）连接后，每位知识工作者都能在同一智能体工作区中提问与行动；Visier 以实时人力与组织数据、业务情境为结果提供可信赖的上下文，并减少在 HR 工具与业务系统之间频繁切换。
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
 【2】
-标题: Maximizing Memory Efficiency to Run Bigger Models on NVIDIA Jetson
+标题: 提升显存利用效率，在 NVIDIA Jetson 上运行更大模型
 类型: 要闻
 来源: NVIDIA Developer Blog
 日期: 2026-04-25 02:04:56
 链接: https://developer.nvidia.com/blog/maximizing-memory-efficiency-to-run-bigger-models-on-nvidia-jetson/
-摘要: The boom in open source generative AI models is pushing beyond data centers into machines operating in the physical world. Developers are eager to deploy these...
+摘要: 开源生成式模型正从数据中心走向物理世界中的设备。开发者希望在边缘侧部署参数量更大的模型，博文介绍在 Jetson 上通过显存与软件栈侧优化在有限算力上承载更大规模模型的思路与实践。
 图片: https://developer-blogs.nvidia.com/wp-content/uploads/2026/04/Robotics-Jetson-OSS-1024x576.png；https://developer-blogs.nvidia.com/wp-content/uploads/2026/04/EdgeAI-Software-Stack.webp
 视频: （无）
 --------------------------------------------------------------
 【3】
-标题: Build with DeepSeek V4 Using NVIDIA Blackwell and GPU-Accelerated Endpoints
+标题: 基于 NVIDIA Blackwell 与 GPU 加速端点使用 DeepSeek V4 构建应用
 类型: 模型发布
 来源: NVIDIA Developer Blog
 日期: 2026-04-25 08:04:16
 链接: https://developer.nvidia.com/blog/build-with-deepseek-v4-using-nvidia-blackwell-and-gpu-accelerated-endpoints/
-摘要: DeepSeek just launched its fourth generation of flagship models with DeepSeek-V4-Pro and DeepSeek-V4-Flash, both targeted at enabling highly efficient...
+摘要: DeepSeek 发布第四代旗舰模型 DeepSeek-V4-Pro 与 DeepSeek-V4-Flash，面向高效推理与复杂任务。NVIDIA 官方博文介绍如何结合 Blackwell 与 GPU 加速推理端点将上述模型纳入应用与部署流程。
 图片: https://developer-blogs.nvidia.com/wp-content/uploads/2026/04/ai-model-representation-2-1024x576.png；https://developer-blogs.nvidia.com/wp-content/uploads/2026/04/DeepSeek-V4.webp
 视频: （无）
 --------------------------------------------------------------
@@ -89,16 +89,6 @@
 视频: （无）
 --------------------------------------------------------------
 【10】
-标题: 华人再破硅谷天花板！AI黑马新任CTO，中科大80后
-类型: 要闻
-来源: 量子位
-日期: 2026-04-25 11:45:56
-链接: https://www.qbitai.com/2026/04/406934.html
-摘要: 属于所有华人的AI新篇章
-图片: （无）
-视频: （无）
---------------------------------------------------------------
-【11】
 标题: 最激进的“AI先锋”多邻国，已经放过员工了
 类型: 要闻
 来源: 36氪
@@ -106,5 +96,25 @@
 链接: https://www.36kr.com/p/3781731948485889
 摘要: AI能帮就帮，不能帮就算了
 图片: https://img.36krcdn.com/hsossms/20260425/v2_c9eee1e49a7141dcaeda79a44755904e@000000_oswg433363oswg692oswg416_img_000?x-oss-process=image/format,jpg/interlace,1；https://img.36krcdn.com/hsossms/20260425/v2_7c1ea413c66843ca86912d89731d5de7@000000_oswg151312oswg692oswg344_img_000?x-oss-process=image/format,jpg/interlace,1
+视频: （无）
+--------------------------------------------------------------
+【11】
+标题: 燃油SUV车主熬出头了！华为乾崑智驾加持，全新奥迪Q5L率先实现智能化
+类型: 要闻
+来源: 量子位
+日期: 2026-04-25 13:31:57
+链接: https://www.qbitai.com/2026/04/406960.html
+摘要: 六年磨一剑
+图片: （无）
+视频: （无）
+--------------------------------------------------------------
+【12】
+标题: AI自主监测宠物健康，陪狗都不用自己来了！涂鸦Hey Tuya打造全屋智能“超级入口”
+类型: 要闻
+来源: 量子位
+日期: 2026-04-25 13:41:18
+链接: https://www.qbitai.com/2026/04/406973.html
+摘要: 首次公开三大AI应用生态
+图片: （无）
 视频: （无）
 --------------------------------------------------------------

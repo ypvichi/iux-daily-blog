@@ -6,9 +6,10 @@ target calendar day (Asia/Shanghai), write markdown to temp/YYYY-MM-DD/rss_artic
 Per feed (数据源 / `source` name), keep at most M entries for that day after
 dedupe (default 5); pick by quality_score then recency within the feed.
 
-Per display type (classify_by_title, same as the written 类型 field), keep at
-most N entries (default 15); within each type, pick by feed priority (feeds.json
-`priority`, higher first), then quality_score, then sort by time.
+Per display type (classify_by_title, same as the written 类型 field), optionally
+keep at most N entries (default 0 = no per-type cap); when capped, within each
+type pick by feed priority (feeds.json `priority`, higher first), then
+quality_score, then sort by time.
 
 Optionally fetches each article URL and extracts up to two images and two
 videos from the main article content (see ARTICLE_MAX_IMAGES/ARTICLE_MAX_VIDEOS;
@@ -103,7 +104,6 @@ _DISPLAY_TYPE_PRIORITY: tuple[str, ...] = (
     "前瞻与传闻",
 )
 MAX_ITEMS_PER_FEED = 5
-MAX_ITEMS_PER_CATEGORY = 15
 # 同分时优先归入更「具体」的类（与 CATEGORIES 顺序无关）。
 _CAT_PRIORITY: tuple[str, ...] = (
     "模型发布",
@@ -1595,10 +1595,9 @@ def cap_entries_per_source(entries: list[dict], max_per: int) -> list[dict]:
 def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]:
     """
     与输出字段「类型」一致（仅 `classify_by_title`），每类最多保留 max_per 条；
-    同类内按 feed_priority（越大越优先）、quality_score_entry 降序择优，再按发布时间升序输出整篇列表。
+    max_per <= 0 表示不限制条数。同类内按 feed_priority（越大越优先）、quality_score_entry 降序择优，再按发布时间升序输出整篇列表。
     """
-    if max_per <= 0:
-        return []
+    unlimited = max_per <= 0
     buckets: dict[str, list[dict]] = defaultdict(list)
     for e in entries:
         cat = classify_by_title(e.get("title"))
@@ -1614,7 +1613,7 @@ def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]
                 -(e.get("published") or datetime.min.replace(tzinfo=timezone.utc)).timestamp(),
             )
         )
-        selected.extend(group[:max_per])
+        selected.extend(group if unlimited else group[:max_per])
 
     selected.sort(
         key=lambda e: e.get("published") or datetime.min.replace(tzinfo=timezone.utc)
@@ -1770,9 +1769,9 @@ def main() -> int:
     parser.add_argument(
         "--max-per-category",
         type=int,
-        default=MAX_ITEMS_PER_CATEGORY,
+        default=0,
         metavar="N",
-        help=f"每类「类型」最多保留条数，同类内按 feeds.json 的 priority（高优先）、再按质量分择优（默认 {MAX_ITEMS_PER_CATEGORY}）",
+        help="每类「类型」最多保留条数，0 表示不限制；同类内按 feeds.json 的 priority（高优先）、再按质量分择优",
     )
     parser.add_argument(
         "--skip-body-media",
