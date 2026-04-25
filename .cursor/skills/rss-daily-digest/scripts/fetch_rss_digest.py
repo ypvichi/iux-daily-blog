@@ -6,9 +6,10 @@ target calendar day (Asia/Shanghai), write markdown to temp/YYYY-MM-DD/rss_artic
 Per feed (数据源 / `source` name), keep at most M entries for that day after
 dedupe (default 5); pick by quality_score then recency within the feed.
 
-Per display type (classify_by_title, same as the written 类型 field), optionally
-keep at most N entries (default 0 = no per-type cap); when capped, within each
-type pick by feed priority (feeds.json `priority`, higher first), then
+Per display type (classify_by_title, or feeds.json 单源 `type` 若设则直出为
+类型名；与写出的「类型」字段一致), optionally keep at most N entries (default
+0 = no per-type cap); when capped, within each type pick by feed priority
+(feeds.json `priority`, higher first), then
 quality_score, then sort by time.
 
 Optionally fetches each article URL and extracts up to two images and two
@@ -66,11 +67,10 @@ ARTICLE_MAX_VIDEOS = 2
 MEDIA_CHECK_TIMEOUT = 6.0
 MEDIA_SNIFF_BYTES = 2048
 
-# 八类归纳：要闻、模型发布、开发生态、产品应用、技术与洞察、行业生态、前瞻与传闻、其他。
+# 八类归纳：要闻、 设计生态、开发生态、产品应用、技术与洞察、行业生态、前瞻与传闻、其他。
 # 展示顺序；分类冲突时用 _CAT_PRIORITY 决胜（特异性优先）。
 CATEGORIES: tuple[str, ...] = (
     "要闻",
-    "模型发布",
     "设计生态",
     "开发生态",
     "产品应用",
@@ -81,9 +81,8 @@ CATEGORIES: tuple[str, ...] = (
 )
 
 # 输出「类型」字段仅限以下七类（无「其他」）；仅依据标题归类，无明确信号时默认「要闻」。
-# 顺序与技能说明一致：模型发布 → … → 要闻。
+# 顺序与技能说明一致：设计生态 → … → 要闻。
 DISPLAY_TYPES: tuple[str, ...] = (
-    "模型发布",
     "设计生态",
     "开发生态",
     "技术与洞察",
@@ -94,7 +93,6 @@ DISPLAY_TYPES: tuple[str, ...] = (
 )
 # 同分时优先归入更具体的类（与 DISPLAY_TYPES 列举顺序无关）。
 _DISPLAY_TYPE_PRIORITY: tuple[str, ...] = (
-    "模型发布",
     "要闻",
     "设计生态",
     "开发生态",
@@ -106,7 +104,6 @@ _DISPLAY_TYPE_PRIORITY: tuple[str, ...] = (
 MAX_ITEMS_PER_FEED = 5
 # 同分时优先归入更「具体」的类（与 CATEGORIES 顺序无关）。
 _CAT_PRIORITY: tuple[str, ...] = (
-    "模型发布",
     "要闻",
     "设计生态",
     "开发生态",
@@ -115,6 +112,76 @@ _CAT_PRIORITY: tuple[str, ...] = (
     "行业生态",
     "前瞻与传闻",
     "其他",
+)
+
+# 设计生态：设计工具、设计系统、UX/视觉/品牌与无障碍等；与开发生态分工，尽量避免纯工程/框架词。
+_DESIGN_KEYWORDS: tuple[str, ...] = (
+    "figma",
+    "figjam",
+    "sketch",
+    "adobe",
+    "photoshop",
+    "illustrator",
+    "indesign",
+    "creative cloud",
+    "framer",
+    "penpot",
+    "invision",
+    " zeplin",
+    " ui ",
+    " ui/",
+    " ux",
+    "ux ",
+    "user experience",
+    "user interface",
+    "interaction design",
+    "design system",
+    "design systems",
+    "design token",
+    "design tokens",
+    "typography",
+    "typeface",
+    "font ",
+    "wireframe",
+    " wireframe",
+    "mockup",
+    " prototype",
+    "prototypes",
+    "usability",
+    "accessibility",
+    "a11y",
+    "branding",
+    "visual identity",
+    "human interface",
+    "material design",
+    "dribbble",
+    "behance",
+    "信息架构",
+    "交互",
+    "原型",
+    "动效",
+    "品牌",
+    "图标",
+    "界面",
+    "视觉",
+    "线框",
+    "用户体验",
+    "用户界面",
+    "设计",
+    "设计系统",
+    "设计规范",
+    "设计稿",
+    "设计工具",
+    "设计生态",
+    "设计资源",
+    "色彩",
+    "字体",
+    "排版",
+    "无障碍",
+    "易用性",
+    "用研",
+    "美编",
+    "美术",
 )
 
 # 小写匹配；多字词尽量带边界空格避免误伤（如 "go "）。
@@ -219,29 +286,6 @@ _HEADLINE_KEYWORDS: tuple[str, ...] = (
     "政策",
 )
 
-# 模型发布：新模型、基座、权重与版本等。
-_MODEL_KEYWORDS: tuple[str, ...] = (
-    "gpt",
-    "claude",
-    "gemini",
-    "llama",
-    "mistral",
-    "deepseek",
-    "large language",
-    "foundation model",
-    "tokenizer",
-    "billion parameter",
-    " open weights",
-    "open weights",
-    "weights release",
-    "model release",
-    "new model",
-    "大模型",
-    "基础模型",
-    "模型发布",
-    "opus",
-    " opus ",
-)
 
 # 产品应用：面向用户/客户的产品、功能与端体验（含平台型产品、机器人产品化等）。
 _PRODUCT_KEYWORDS: tuple[str, ...] = (
@@ -1384,7 +1428,7 @@ def classify_entry(entry: dict) -> str:
 
     scores: dict[str, int] = {c: 0 for c in CATEGORIES}
     scores["要闻"] = _keyword_hits(blob, _HEADLINE_KEYWORDS)
-    scores["模型发布"] = _keyword_hits(blob, _MODEL_KEYWORDS)
+    scores["设计生态"] = _keyword_hits(blob, _DESIGN_KEYWORDS)
     scores["开发生态"] = _keyword_hits(blob, _DEV_KEYWORDS)
     scores["产品应用"] = _keyword_hits(blob, _PRODUCT_KEYWORDS)
     scores["技术与洞察"] = _keyword_hits(blob, _TECH_INSIGHT_KEYWORDS)
@@ -1401,7 +1445,7 @@ def classify_entry(entry: dict) -> str:
 
     space = _keyword_hits(blob, _SPACE_KEYWORDS)
     strong_tech = (
-        scores["模型发布"]
+        scores["设计生态"]
         + scores["开发生态"]
         + scores["技术与洞察"]
         + scores["产品应用"]
@@ -1428,7 +1472,7 @@ def classify_by_title(title: str | None) -> str:
 
     scores: dict[str, int] = {c: 0 for c in DISPLAY_TYPES}
     scores["要闻"] = _keyword_hits(blob, _HEADLINE_KEYWORDS)
-    scores["模型发布"] = _keyword_hits(blob, _MODEL_KEYWORDS)
+    scores["设计生态"] = _keyword_hits(blob, _DESIGN_KEYWORDS)
     scores["开发生态"] = _keyword_hits(blob, _DEV_KEYWORDS)
     scores["产品应用"] = _keyword_hits(blob, _PRODUCT_KEYWORDS)
     scores["技术与洞察"] = _keyword_hits(blob, _TECH_INSIGHT_KEYWORDS)
@@ -1444,7 +1488,7 @@ def classify_by_title(title: str | None) -> str:
 
     space = _keyword_hits(blob, _SPACE_KEYWORDS)
     strong_tech = (
-        scores["模型发布"]
+        scores["设计生态"]
         + scores["开发生态"]
         + scores["技术与洞察"]
         + scores["产品应用"]
@@ -1465,6 +1509,17 @@ def classify_by_title(title: str | None) -> str:
     if best_v <= 0:
         return "要闻"
     return best
+
+
+def entry_display_type(entry: dict) -> str:
+    """
+    输出与 md「类型:」一致：feeds.json 中该源若设置 `type`（非空字符串）则
+    直接使用，否则与 classify_by_title 相同。
+    """
+    raw = entry.get("type")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return classify_by_title(entry.get("title"))
 
 
 def bucket_by_category(entries: list[dict]) -> dict[str, list[dict]]:
@@ -1594,17 +1649,23 @@ def cap_entries_per_source(entries: list[dict], max_per: int) -> list[dict]:
 
 def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]:
     """
-    与输出字段「类型」一致（仅 `classify_by_title`），每类最多保留 max_per 条；
-    max_per <= 0 表示不限制条数。同类内按 feed_priority（越大越优先）、quality_score_entry 降序择优，再按发布时间升序输出整篇列表。
+    与输出字段「类型」一致（`entry_display_type`：含 feeds.json 单源 `type` 直出），
+    每类最多保留 max_per 条；max_per <= 0 表示不限制条数。同类内按
+    feed_priority（越大越优先）、quality_score_entry 降序择优，再按发布时间升序
+    输出整篇列表。自定义 `type` 在已知七类之后按名称排序再截断。
     """
     unlimited = max_per <= 0
     buckets: dict[str, list[dict]] = defaultdict(list)
     for e in entries:
-        cat = classify_by_title(e.get("title"))
+        cat = entry_display_type(e)
         buckets[cat].append(e)
 
+    known = set(DISPLAY_TYPES)
+    extra_cats = sorted(k for k in buckets if k not in known)
+    cat_order = list(DISPLAY_TYPES) + extra_cats
+
     selected: list[dict] = []
-    for cat in DISPLAY_TYPES:
+    for cat in cat_order:
         group = buckets.get(cat, [])
         group.sort(
             key=lambda e: (
@@ -1654,7 +1715,7 @@ def write_markdown(
 
         lines.append(f"【{i}】")
         lines.append(f"标题: {title}")
-        lines.append(f"类型: {classify_by_title(e.get('title'))}")
+        lines.append(f"类型: {entry_display_type(e)}")
         lines.append(f"来源: {source}")
         lines.append(f"日期: {published_str}")
         lines.append(f"链接: {link}")
@@ -1676,6 +1737,8 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
     - 嵌套：顶层为各类别 { "name", "feeds": [ { "name", "url", "priority"? }, ... ] }，展平为单列表拉取。
     - 旧版：顶层直接为 { "name", "url", "priority"? }。
     priority 为可选非负整数，数值越大该源越优先（抓取顺序与同类截断择优均考虑）。
+    另可为单源设置 "type"：非空字符串时，该源当日条目的「类型」字段直接使用此
+    值（不再按标题归类为默认七类）。
     另可为单源设置 "articleSelector"（CSS 选择器，如 .content + p）：只在该
     选择器**首个**匹配节点内取正文图/视频。
     可为单源设置 "showMedia"：false 时不抓取/detect 正文内图片、视频（仍抓取页面文本）。
@@ -1697,6 +1760,9 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             if ase:
                 row["article_selector"] = ase
             row["show_media"] = bool(item.get("showMedia", True))
+            t = item.get("type")
+            if isinstance(t, str) and t.strip():
+                row["type"] = t.strip()
             out.append(row)
             continue
         for sub in item.get("feeds") or []:
@@ -1717,6 +1783,9 @@ def flatten_feeds_config(feeds_data: list) -> list[dict]:
             if ase:
                 row["article_selector"] = ase
             row["show_media"] = bool(sub.get("showMedia", True))
+            t = sub.get("type")
+            if isinstance(t, str) and t.strip():
+                row["type"] = t.strip()
             out.append(row)
     return out
 
@@ -1841,6 +1910,11 @@ def main() -> int:
                     if ase:
                         row["article_selector"] = ase
                     row["show_media"] = bool(feed.get("show_media", True))
+                    if render_key:
+                        row["feed_render"] = render_key
+                    ft = feed.get("type")
+                    if isinstance(ft, str) and ft.strip():
+                        row["type"] = ft.strip()
                     all_entries.append(row)
                     matched_items += 1
             usable_sources.append(f"{name}: ok (parsed={len(parsed_items)}, matched={matched_items})")

@@ -36,9 +36,24 @@
     "name": "AI公司",
     "feeds": [
       {
+        "name": "buildfastwithai_llms",
+        "url": "https://www.buildfastwithai.com/blogs/all?category=4",
+        "priority": 7,
+        "articleSelector":"main",
+        "type":"模型发布",
+        "render": "BuildFastWithaAiRender"
+      },
+      {
         "name": "OpenAI",
         "url": "https://openai.com/news/rss.xml",
         "priority": 2
+      },
+      {
+        "name": "Cursor Blog",
+        "url": "https://cursor.com/cn/blog",
+        "priority": 2,
+        "articleSelector":"article",
+        "render": "CursorBlogRender"
       },
       {
         "name": "NVIDIA",
@@ -48,11 +63,6 @@
       {
         "name": "NVIDIA Blog",
         "url": "https://blogs.nvidia.cn/feed/",
-        "priority": 2
-      },
-      {
-        "name": "NVIDIA Developer Blog",
-        "url": "https://developer.nvidia.com/blog/feed/",
         "priority": 2
       },
       {
