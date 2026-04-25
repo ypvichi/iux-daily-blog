@@ -3,9 +3,12 @@
 Fetch multiple RSS/Atom feeds, keep entries whose published time falls on the
 target calendar day (Asia/Shanghai), write markdown to temp/YYYY-MM-DD/rss_articles.md.
 
+Per feed (数据源 / `source` name), keep at most M entries for that day after
+dedupe (default 5); pick by quality_score then recency within the feed.
+
 Per display type (classify_by_title, same as the written 类型 field), keep at
-most N entries; within each type, pick by feed priority (feeds.json `priority`,
-higher first), then quality_score, then sort by time.
+most N entries (default 15); within each type, pick by feed priority (feeds.json
+`priority`, higher first), then quality_score, then sort by time.
 
 Optionally fetches each article URL and extracts up to two images and two
 videos from the main article content (see ARTICLE_MAX_IMAGES/ARTICLE_MAX_VIDEOS;
@@ -99,7 +102,8 @@ _DISPLAY_TYPE_PRIORITY: tuple[str, ...] = (
     "行业生态",
     "前瞻与传闻",
 )
-MAX_ITEMS_PER_CATEGORY = 10
+MAX_ITEMS_PER_FEED = 5
+MAX_ITEMS_PER_CATEGORY = 15
 # 同分时优先归入更「具体」的类（与 CATEGORIES 顺序无关）。
 _CAT_PRIORITY: tuple[str, ...] = (
     "模型发布",
@@ -1564,6 +1568,30 @@ def dedupe(entries: list[dict]) -> list[dict]:
     return [best[k] for k in order]
 
 
+def cap_entries_per_source(entries: list[dict], max_per: int) -> list[dict]:
+    """
+    每个数据源（条目 `source` 字段，与 feeds.json 中该源的展示名一致）最多保留 max_per 条；
+    同源内按质量分、再按发布时间择优（新者优先），避免单源刷屏。
+    """
+    if max_per <= 0:
+        return []
+    buckets: dict[str, list[dict]] = defaultdict(list)
+    for e in entries:
+        key = ((e.get("source") or "").strip() or "(未知来源)")
+        buckets[key].append(e)
+    out: list[dict] = []
+    for src in sorted(buckets.keys()):
+        group = buckets[src]
+        group.sort(
+            key=lambda e: (
+                -quality_score_entry(e),
+                -(e.get("published") or datetime.min.replace(tzinfo=timezone.utc)).timestamp(),
+            )
+        )
+        out.extend(group[:max_per])
+    return out
+
+
 def select_top_per_display_type(entries: list[dict], max_per: int) -> list[dict]:
     """
     与输出字段「类型」一致（仅 `classify_by_title`），每类最多保留 max_per 条；
@@ -1730,6 +1758,16 @@ def main() -> int:
         help="Repository root (default: cwd)",
     )
     parser.add_argument(
+        "--max-per-feed",
+        type=int,
+        default=MAX_ITEMS_PER_FEED,
+        metavar="M",
+        help=(
+            "每个数据源（订阅源）在合并去重后、按类型截断前，当日最多保留条数"
+            f"（同源内按质量分与发布时间择优，默认 {MAX_ITEMS_PER_FEED}）"
+        ),
+    )
+    parser.add_argument(
         "--max-per-category",
         type=int,
         default=MAX_ITEMS_PER_CATEGORY,
@@ -1825,6 +1863,9 @@ def main() -> int:
 
     all_entries = dedupe(all_entries)
     all_entries.sort(key=lambda e: (e.get("published") or datetime.min.replace(tzinfo=timezone.utc)))
+    feed_cap = max(0, int(args.max_per_feed))
+    all_entries = cap_entries_per_source(all_entries, feed_cap)
+    all_entries.sort(key=lambda e: (e.get("published") or datetime.min.replace(tzinfo=timezone.utc)))
     cap = max(0, int(args.max_per_category))
     all_entries = select_top_per_display_type(all_entries, cap)
 
@@ -1846,7 +1887,8 @@ def main() -> int:
         extra = " body_media=off (--skip-body-media)"
     print(
         f"Wrote {out_file} ({len(all_entries)} items, "
-        f"max {cap} per display type, ranked by feed priority then quality_score).{extra}"
+        f"max {feed_cap} per feed (after dedupe), max {cap} per display type, "
+        f"ranked by feed priority then quality_score).{extra}"
     )
     print(
         "Source summary:"

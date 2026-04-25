@@ -27,7 +27,7 @@ Hiklink 所需环境变量见根目录 **`hiklink.js`** 文件头注释；未配
 **调用SKILL**
 调用 `rss-daily-digest` 技能进行该子任务，完成读取后，统一保存到 `<项目根目录>/temp/<当前日期>/rss_articles.md`
 **相关约束**
-1. 只获取当日 RSS 资讯；按 `fetch_rss_digest.py` 规则，**每个类型（与 `rss_articles.md` 中「类型」一致）最多保留 10 条**，同类内由脚本按质量分择优，落选条目不必写入 `content/post`。
+1. 只获取当日 RSS 资讯；按 `fetch_rss_digest.py` 规则，**合并去重后每个数据源最多 5 条**、**每个类型（与 `rss_articles.md` 中「类型」一致）最多 15 条**，由脚本按 priority 与质量分择优，落选条目不必写入 `content/post`。
 2. `rss_articles.md` 中每条可含从原文页抓取的 **「图片:」「视频:」** 行；生成 `content/post/<日期>.md` 时，若该条在 `rss_articles` 中**不是** `（无）`，须把相应图片/视频**写入**该条对应的「摘要分块」中（见 Step3 模板与格式说明）。
 
 ### Step2. 综合 `rss_articles.md` 的内容，生成最终完整的日报md `content/post/<YYYY-MM-DD>.md`
