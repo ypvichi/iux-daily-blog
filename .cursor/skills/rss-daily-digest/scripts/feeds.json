@@ -37,6 +37,14 @@
     "feeds": [
       {
         "name": "buildfastwithai_llms",
+        "url": "https://www.buildfastwithai.com/blogs/all?category=1",
+        "priority": 7,
+        "articleSelector":"main",
+        "type":"产品应用",
+        "render": "BuildFastWithaAiRender"
+      },
+      {
+        "name": "buildfastwithai_llms",
         "url": "https://www.buildfastwithai.com/blogs/all?category=4",
         "priority": 7,
         "articleSelector":"main",

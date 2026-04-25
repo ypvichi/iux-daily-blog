@@ -29,8 +29,28 @@
 视频: （无）
 --------------------------------------------------------------
 【4】
+标题: Plan Access Tokens (PLANTs) are now in beta
+类型: 要闻
+来源: Figma
+日期: 2026-04-23 08:00:00
+链接: https://www.figma.com/release-notes/?title=plan-access-tokens-plants-are-now-in-beta
+摘要: Plan Access Tokens (PLANTs) are now in beta — a new authentication method for server-to-server integrations and internal automation.
+图片: https://cdn.sanity.io/images/599r6htc/regionalized/ff213ba1a55bfdcca6096f44aabb95a4fd4d6e67-1271x638.png?w=1271&h=638&q=75&fit=max&auto=format
+视频: （无）
+--------------------------------------------------------------
+【5】
+标题: Developer Logging available for Governance+ customers
+类型: 要闻
+来源: Figma
+日期: 2026-04-23 08:00:00
+链接: https://www.figma.com/release-notes/?title=developer-logging-available-for-governance-customers
+摘要: Get visibility into how your org's APIs are being used.
+图片: https://cdn.sanity.io/images/599r6htc/regionalized/ff213ba1a55bfdcca6096f44aabb95a4fd4d6e67-1271x638.png?w=1271&h=638&q=75&fit=max&auto=format
+视频: （无）
+--------------------------------------------------------------
+【6】
 标题: GPT-5.5 Bio Bug Bounty
-类型: 模型发布
+类型: 要闻
 来源: OpenAI
 日期: 2026-04-23 08:00:00
 链接: https://openai.com/index/gpt-5-5-bio-bug-bounty
@@ -38,47 +58,17 @@
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
-【5】
-标题: Plan Access Tokens (PLANTs) are now in beta
-类型: 要闻
-来源: Figma
-日期: 2026-04-23 08:00:00
-链接: https://www.figma.com/release-notes/?title=plan-access-tokens-plants-are-now-in-beta
-摘要: Plan Access Tokens (PLANTs) are now in beta — a new authentication method for server-to-server integrations and internal automation.
-图片: （无）
-视频: （无）
---------------------------------------------------------------
-【6】
-标题: Developer Logging available for Governance+ customers
-类型: 要闻
-来源: Figma
-日期: 2026-04-23 08:00:00
-链接: https://www.figma.com/release-notes/?title=developer-logging-available-for-governance-customers
-摘要: Get visibility into how your org's APIs are being used.
-图片: （无）
-视频: （无）
---------------------------------------------------------------
 【7】
-标题: 字节跳动推出新一代 3D 生成大模型Seed3D 2.0
-类型: 模型发布
-来源: DAILY AI NEWS
-日期: 2026-04-23 12:00:00
-链接: https://mp.weixin.qq.com/s/_9vggNLz0ehs_g0k8q709g
-摘要: 字节跳动推出新一代3D生成大模型 Seed3D 2.0 ，在几何与纹理两项核心指标上均达SOTA。模型引入Coarse-to-Fine两阶段DiT策略，解耦整体结构与精细细节，采用统一PBR生成架构结合MoE与VLM先验，大幅提升材质真实感。Seed3D 2.0拓展了部件级拆分、关节化建模及场景组合等下游能力，推动3D生成迈向”生产可用”。
-图片: （无）
-视频: （无）
---------------------------------------------------------------
-【8】
-标题: OpenAI开源隐私过滤模型OpenAI Privacy Filter
+标题: OpenAI Privacy Filter – OpenAI开源的隐私过滤模型
 类型: 开发生态
 来源: DAILY AI NEWS
 日期: 2026-04-23 12:00:00
 链接: https://ai-bot.cn/openai-privacy-filter/
-摘要: OpenAI开源 OpenAI Privacy Filter 模型，用于检测和编辑文本中的个人身份信息（PII）。模型总参数15亿，支持128K上下文，可在本地运行。模型基于双向token分类架构，能识别姓名、地址、邮箱、电话、账号、密码等8类隐私信息，在PII-Masking-300k基准上达96% F1分数。
+摘要: OpenAI Privacy Filter是什么 OpenAI Privacy Filter 是OpenAI开源的隐私过滤模型，专为检测和脱敏文本中的个人身份信息（PII）设计。模型基于 gpt-oss 架构改造为双向 token 分类器，总参数 15 亿、活跃参数 5000 万，支持 12.8 万 token 超长上下文，可在浏览器或笔记本本地运行，无需将敏感数据上传云端。模型在 PII-Masking-300k 基准测试中取得 96% F1 分数（修正后达 97.43%）。 OpenAI Privacy Filter的主要功能 八类 PII 检测 ：识别私人姓名、地址、邮箱、电话、URL、日期、账号（含银行卡/信用卡）及密钥/密码等敏感信息。 上下文感知脱敏 ：基于深层语言理解区分公开信息与私人信息，避免简单规则导致的误杀或漏检。 本地高吞吐量处理 ：单次前向传播完成全序列标注，支持 128k 长文本不断片处理。 可配置精度/召回 ：运行时提供多种操作点预设，按需调整脱敏边界与严格程度。 支持微调 ：可用少量领域数据快速适配，提升特定场景（如医疗、金融）的检测准确率。 OpenAI
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
-【9】
+【8】
 标题: 腾讯混元开源快慢思考融合的混合专家模型Hy3 preview
 类型: 开发生态
 来源: DAILY AI NEWS
@@ -88,7 +78,7 @@
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
-【10】
+【9】
 标题: 阿里通义开源稠密多模态模型Qwen3.6-27B
 类型: 开发生态
 来源: DAILY AI NEWS
@@ -98,7 +88,27 @@
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
+【10】
+标题: Xiaomi MiMo-V2.5-Pro: Full Review & Benchmarks (2026)
+类型: 产品应用
+来源: buildfastwithai_llms
+日期: 2026-04-23 12:00:00
+链接: https://www.buildfastwithai.com/blogs/xiaomi-mimo-v2-5-pro-review-2026
+摘要: MiMo-V2.5-Pro scores 57.2% on SWE-bench Pro, matches Claude Opus 4.6 on agentic tasks, and costs 80% less. Full benchmark breakdown inside.
+图片: https://oukdqujzonxvqhiefdsv.supabase.co/storage/v1/object/public/blogs/xiaomi-mimo-v2-5-pro-review-2026/1776920728322.png；https://oukdqujzonxvqhiefdsv.supabase.co/storage/v1/object/public/blogs/xiaomi-mimo-v2-5-pro-review-2026/1776920791146.png
+视频: （无）
+--------------------------------------------------------------
 【11】
+标题: Qwen3.6-27B: 27B Model Beats 397B on Coding (2026)
+类型: 产品应用
+来源: buildfastwithai_llms
+日期: 2026-04-23 12:00:00
+链接: https://www.buildfastwithai.com/blogs/qwen3-6-27b-review-2026
+摘要: Qwen3.6-27B scores 77.2% on SWE-bench Verified, beats a 397B MoE, runs on 18GB VRAM, and matches Claude 4.5 Opus on Terminal-Bench. Full review inside.
+图片: https://oukdqujzonxvqhiefdsv.supabase.co/storage/v1/object/public/blogs/qwen3-6-27b-review-2026/1776936068034.png；https://oukdqujzonxvqhiefdsv.supabase.co/storage/v1/object/public/blogs/qwen3-6-27b-review-2026/1776936125501.png
+视频: （无）
+--------------------------------------------------------------
+【12】
 标题: OpenAI 推出团队协作智能体Workspace Agents
 类型: 要闻
 来源: DAILY AI NEWS
@@ -108,53 +118,43 @@
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
-【12】
+【13】
+标题: 字节跳动推出新一代 3D 生成大模型Seed3D 2.0
+类型: 要闻
+来源: DAILY AI NEWS
+日期: 2026-04-23 12:00:00
+链接: https://mp.weixin.qq.com/s/_9vggNLz0ehs_g0k8q709g
+摘要: 字节跳动推出新一代3D生成大模型 Seed3D 2.0 ，在几何与纹理两项核心指标上均达SOTA。模型引入Coarse-to-Fine两阶段DiT策略，解耦整体结构与精细细节，采用统一PBR生成架构结合MoE与VLM先验，大幅提升材质真实感。Seed3D 2.0拓展了部件级拆分、关节化建模及场景组合等下游能力，推动3D生成迈向”生产可用”。
+图片: （无）
+视频: （无）
+--------------------------------------------------------------
+【14】
 标题: Top 10 uses for Codex at work
 类型: 要闻
 来源: OpenAI
 日期: 2026-04-23 18:00:00
 链接: https://openai.com/academy/top-10-use-cases-codex-for-work
 摘要: Explore 10 practical Codex use cases to automate tasks, create deliverables, and turn real inputs into outputs across tools, files, and workflows.
-图片: （无）
+图片: https://images.ctfassets.net/kftzwdyauwt9/1Qc1hBRoinKWaO3QEZkIYd/96da876b09e17856f43f5c509c6ac963/how-to-get-started.png?w=3840&q=90&fm=webp；https://images.ctfassets.net/kftzwdyauwt9/1UmriWebOfrrf0B43OooqE/973b3b7ee2ac96e537f2efb697c2f69c/what-is-codex.png?w=3840&q=90&fm=webp
 视频: （无）
 --------------------------------------------------------------
-【13】
+【15】
 标题: How to get started with Codex
 类型: 要闻
 来源: OpenAI
 日期: 2026-04-23 18:00:00
 链接: https://openai.com/academy/codex-how-to-start
 摘要: Learn how to get started with Codex by setting up projects, creating threads, and completing your first tasks with step-by-step guidance.
-图片: （无）
+图片: https://images.ctfassets.net/kftzwdyauwt9/5a7uKTozmVeEuSwi3QdWAB/14acd3d814d1a3cf208eb3439d5a84e8/codexthread.png?w=3840&q=90&fm=webp；https://images.ctfassets.net/kftzwdyauwt9/tX1Csx6I3JfJYeJetPa0t/6e415a6c0efb94cab9ea3cb4395ad7e8/filestructure.png?w=3840&q=90&fm=webp
 视频: （无）
 --------------------------------------------------------------
-【14】
-标题: Plugins and skills
-类型: 要闻
-来源: OpenAI
-日期: 2026-04-23 18:00:00
-链接: https://openai.com/academy/codex-plugins-and-skills
-摘要: Learn how to use Codex plugins and skills to connect tools, access data, and follow repeatable workflows to automate tasks and improve results.
-图片: （无）
-视频: （无）
---------------------------------------------------------------
-【15】
+【16】
 标题: Introducing GPT-5.5
-类型: 模型发布
+类型: 要闻
 来源: OpenAI
 日期: 2026-04-23 19:00:00
 链接: https://openai.com/index/introducing-gpt-5-5
 摘要: Introducing GPT-5.5, our smartest model yet—faster, more capable, and built for complex tasks like coding, research, and data analysis across tools.
-图片: （无）
-视频: （无）
---------------------------------------------------------------
-【16】
-标题: National Australia Bank 借助 Cursor 加速遗留系统迁移
-类型: 要闻
-来源: Cursor Blog
-日期: 2026-04-23 20:00:00
-链接: https://cursor.com/cn/blog/nab
-摘要: National Australia Bank 借助 Cursor 加速遗留系统迁移
-图片: （无）
+图片: https://images.ctfassets.net/kftzwdyauwt9/5A8f5mO7aKrwLH5ClDV0si/e49a0a3c56f63d9998dd338ce16d0dd6/Blog1.png?w=3840&q=90&fm=webp；https://images.ctfassets.net/kftzwdyauwt9/6T4xNx8jzQOmohTbNFpbt3/e85b69bdc6d86366e17d48739be4232e/Blog1.png?w=3840&q=90&fm=webp
 视频: （无）
 --------------------------------------------------------------
