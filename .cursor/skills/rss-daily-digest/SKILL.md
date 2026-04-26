@@ -100,16 +100,16 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 
 ## 输出 发布公告 结构
 
-必须生成发布公告，保存为：`temp/<YYYY-MM-DD>/message.md`，模板示例如下,不得随意加更多修饰,和模板字眼保持一致：
+必须生成发布公告，保存为：`temp/<YYYY-MM-DD>/message.md`，严格按模板生成，保持结构一致，如下：
 
 ```markdown
 
 📰 IUX AI Daily 
 | AI早报速递 | 2026-04-20 |
 ============================
-
-🥰 大家好，我是你们的助理哥，今天是<日期>，<农历xxx>
-   <杭州今日天气预报>,为您带来今日AI报道
+🌷 <简短的充满诗意的开场白>。
+🥰 大家好，我是你们的助理哥，今天是<日期><星期>，<农历xxx>。
+🌥️ <杭州天气预报>,为您带来今日AI报道。
 
 2026年4月16日
 
