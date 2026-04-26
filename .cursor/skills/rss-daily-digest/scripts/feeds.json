@@ -6,7 +6,8 @@
         "name": "量子位",
         "url": "https://www.qbitai.com/feed",
         "priority": 6,
-        "articleSelector": ".article .pgc-img"
+        "articleSelector": ".article .pgc-img",
+        "showMedia": false
       },
       {
         "name": "机器之心",
