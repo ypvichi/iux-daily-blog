@@ -109,6 +109,26 @@
 视频: （无）
 --------------------------------------------------------------
 【12】
+标题: New connectors in Claude for everyday life
+类型: 要闻
+来源: Claude Blog
+日期: 2026-04-23 12:00:00
+链接: https://claude.com/blog/connectors-for-everyday-life
+摘要: Claude now connects to the apps you use every week, including AllTrails, Instacart, Audible, Booking.com, and TripAdvisor. Ask, and Claude brings in the right app.
+图片: https://cdn.prod.website-files.com/68a44d4040f98a4adf2207b6/69ea41d624ff5cbc6ca6c54b_1cbf2332.png
+视频: （无）
+--------------------------------------------------------------
+【13】
+标题: Built-in memory for Claude Managed Agents
+类型: 要闻
+来源: Claude Blog
+日期: 2026-04-23 12:00:00
+链接: https://claude.com/blog/claude-managed-agents-memory
+摘要: Memory on Claude Managed Agents lets you build agents that learn from every task, user, and session, with no memory infrastructure to maintain.
+图片: https://cdn.prod.website-files.com/68a44d4040f98a4adf2207b6/69e911b25f02df256c8cba87_Claude-Blog-CMA-Memory.png
+视频: （无）
+--------------------------------------------------------------
+【14】
 标题: OpenAI 推出团队协作智能体Workspace Agents
 类型: 要闻
 来源: DAILY AI NEWS
@@ -118,7 +138,7 @@
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
-【13】
+【15】
 标题: 字节跳动推出新一代 3D 生成大模型Seed3D 2.0
 类型: 要闻
 来源: DAILY AI NEWS
@@ -128,7 +148,7 @@
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
-【14】
+【16】
 标题: Top 10 uses for Codex at work
 类型: 要闻
 来源: OpenAI
@@ -138,7 +158,7 @@
 图片: https://images.ctfassets.net/kftzwdyauwt9/1Qc1hBRoinKWaO3QEZkIYd/96da876b09e17856f43f5c509c6ac963/how-to-get-started.png?w=3840&q=90&fm=webp；https://images.ctfassets.net/kftzwdyauwt9/1UmriWebOfrrf0B43OooqE/973b3b7ee2ac96e537f2efb697c2f69c/what-is-codex.png?w=3840&q=90&fm=webp
 视频: （无）
 --------------------------------------------------------------
-【15】
+【17】
 标题: How to get started with Codex
 类型: 要闻
 来源: OpenAI
@@ -148,7 +168,17 @@
 图片: https://images.ctfassets.net/kftzwdyauwt9/5a7uKTozmVeEuSwi3QdWAB/14acd3d814d1a3cf208eb3439d5a84e8/codexthread.png?w=3840&q=90&fm=webp；https://images.ctfassets.net/kftzwdyauwt9/tX1Csx6I3JfJYeJetPa0t/6e415a6c0efb94cab9ea3cb4395ad7e8/filestructure.png?w=3840&q=90&fm=webp
 视频: （无）
 --------------------------------------------------------------
-【16】
+【18】
+标题: Plugins and skills
+类型: 要闻
+来源: OpenAI
+日期: 2026-04-23 18:00:00
+链接: https://openai.com/academy/codex-plugins-and-skills
+摘要: Learn how to use Codex plugins and skills to connect tools, access data, and follow repeatable workflows to automate tasks and improve results.
+图片: https://images.ctfassets.net/kftzwdyauwt9/1Qc1hBRoinKWaO3QEZkIYd/96da876b09e17856f43f5c509c6ac963/how-to-get-started.png?w=3840&q=90&fm=webp；https://images.ctfassets.net/kftzwdyauwt9/1UmriWebOfrrf0B43OooqE/973b3b7ee2ac96e537f2efb697c2f69c/what-is-codex.png?w=3840&q=90&fm=webp
+视频: （无）
+--------------------------------------------------------------
+【19】
 标题: Introducing GPT-5.5
 类型: 要闻
 来源: OpenAI
@@ -156,5 +186,15 @@
 链接: https://openai.com/index/introducing-gpt-5-5
 摘要: Introducing GPT-5.5, our smartest model yet—faster, more capable, and built for complex tasks like coding, research, and data analysis across tools.
 图片: https://images.ctfassets.net/kftzwdyauwt9/5A8f5mO7aKrwLH5ClDV0si/e49a0a3c56f63d9998dd338ce16d0dd6/Blog1.png?w=3840&q=90&fm=webp；https://images.ctfassets.net/kftzwdyauwt9/6T4xNx8jzQOmohTbNFpbt3/e85b69bdc6d86366e17d48739be4232e/Blog1.png?w=3840&q=90&fm=webp
+视频: （无）
+--------------------------------------------------------------
+【20】
+标题: National Australia Bank 借助 Cursor 加速遗留系统迁移
+类型: 要闻
+来源: Cursor Blog
+日期: 2026-04-23 20:00:00
+链接: https://cursor.com/cn/blog/nab
+摘要: NAB 在评估 Amazon Q 和 GitHub Copilot 后，已让 6,000 名开发者统一使用 Cursor。遗留系统现代化改造如今以 3 倍速度推进，且质量更高。
+图片: （无）
 视频: （无）
 --------------------------------------------------------------

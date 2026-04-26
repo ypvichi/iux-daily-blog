@@ -1719,6 +1719,8 @@ def write_markdown(
         lines.append(f"来源: {source}")
         lines.append(f"日期: {published_str}")
         lines.append(f"链接: {link}")
+        feed_prio = _feed_priority_value(e.get("feed_priority"))
+        lines.append(f"优先级: {feed_prio}")
         lines.append(f"摘要: {summary}")
         lines.append(_format_media_line("图片", imgs))
         lines.append(_format_media_line("视频", vids))

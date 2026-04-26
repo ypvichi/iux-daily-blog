@@ -6,8 +6,13 @@
         "name": "量子位",
         "url": "https://www.qbitai.com/feed",
         "priority": 6,
-        "articleSelector": ".article",
-        "showMedia": false
+        "articleSelector": ".article"
+      },
+      {
+        "name": "机器之心",
+        "url": "https://wechat2rss.xlab.app/feed/51e92aad2728acdd1fda7314be32b16639353001.xml",
+        "priority": 6,
+        "articleSelector": ".rich_media_content"
       },
       {
         "name": "AIGC IZZI CN",
@@ -28,6 +33,60 @@
         "url": "https://ai-bot.cn/daily-ai-news/",
         "priority": 3,
         "render": "DailyAiNewsRender"
+      },
+      {
+        "name": "我爱计算机视觉",
+        "url": "https://wechat2rss.xlab.app/feed/b81ffcfff1107b5265cd7e39de610dc7ca72caf4.xml",
+        "priority": 8,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "腾讯技术工程",
+        "url": "https://wechat2rss.xlab.app/feed/9685937b45fe9c7a526dbc32e4f24ba879a65b9a.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "阿里云开发者",
+        "url": "https://wechat2rss.xlab.app/feed/c74ed6db00cfbf16f2a048a165b4453f982681f0.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "阿里技术",
+        "url": "https://wechat2rss.xlab.app/feed/6e1f9b775f7a5841ac1a94310f0478b45a02ec01.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "未闻Code",
+        "url": "https://wechat2rss.xlab.app/feed/a148ed0a542de4be305ffa1b93e8663ad252e22c.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "Android 开发者",
+        "url": "https://wechat2rss.xlab.app/feed/c2e44fa977abf95e4aabdd7059bbb8d1075a4720.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "哔哩哔哩技术",
+        "url": "https://wechat2rss.xlab.app/feed/434235d4815fdb8447ff3127fc053ceb8b3aada6.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "爱奇艺技术产品团队",
+        "url": "https://wechat2rss.xlab.app/feed/16a4ec12a83a52e1f6e941bce030a4d64ee26c47.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
+      },
+      {
+        "name": "小米技术",
+        "url": "https://wechat2rss.xlab.app/feed/20bc9c3251b3c4f73d3b53aa1f1ab853d05d4cbc.xml",
+        "priority": 7,
+        "articleSelector": ".rich_media_content"
       }
       
     ]
@@ -38,7 +97,7 @@
       {
         "name": "buildfastwithai_llms",
         "url": "https://www.buildfastwithai.com/blogs/all?category=1",
-        "priority": 7,
+        "priority": 20,
         "articleSelector":"main",
         "type":"产品应用",
         "render": "BuildFastWithaAiRender"
@@ -46,7 +105,7 @@
       {
         "name": "buildfastwithai_llms",
         "url": "https://www.buildfastwithai.com/blogs/all?category=4",
-        "priority": 7,
+        "priority": 21,
         "articleSelector":"main",
         "type":"模型发布",
         "render": "BuildFastWithaAiRender"
@@ -54,34 +113,43 @@
       {
         "name": "OpenAI",
         "url": "https://openai.com/news/rss.xml",
-        "priority": 2
+        "priority": 18,
+        "articleSelector":".max-w-container"
       },
       {
         "name": "Cursor Blog",
         "url": "https://cursor.com/cn/blog",
-        "priority": 2,
-        "articleSelector":"article",
+        "priority": 18,
+        "articleSelector":".blog_post_content_wrap",
         "render": "CursorBlogRender"
+      },
+      {
+        "name": "Claude Blog",
+        "url": "https://claude.com/blog",
+        "priority": 18,
+        "articleSelector":"article",
+        "render": "ClaudeBlogRender"
       },
       {
         "name": "NVIDIA",
         "url": "https://blogs.nvidia.cn/blog/category/news/feed/",
-        "priority": 2
+        "priority": 18
       },
       {
         "name": "NVIDIA Blog",
         "url": "https://blogs.nvidia.cn/feed/",
-        "priority": 2
+        "priority": 18
       },
       {
         "name": "AWS Blog",
         "url": "https://aws.amazon.com/blogs/machine-learning/feed/",
-        "priority": 2
+        "priority": 18
       },
       {
         "name": "Figma",
         "url": "https://www.figma.com/release-notes/feed/atom.xml",
-        "priority": 4
+        "priority": 19,
+        "type":"设计生态"
       }
     ]
   }

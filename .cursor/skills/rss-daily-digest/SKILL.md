@@ -37,7 +37,7 @@ step3. 输出 `articles` 和 `发布公告`
 step4. 综合 `rss_articles.md` 的内容，生成最终完整的日报md `content/post/<YYYY-MM-DD>.md`
 
 1. 如果遇到多条表达的是 同一件事情，或者相同的资讯内容的，根据数据源的优先级，选取一条即可
-2. 每种类型最多取10条高价值的新闻，如果不足10条，则全用
+2. 每种类型最多取10条高价值的新闻，如果不足10条，则全用，你要有点判断能力哦，没什么价值的新闻不要取
 3. 严格按以下类型列表顺序生成类型标题, 类型下的文章必须和 `rss_articles.md` 中表达的类型保持一致：
 ```text
 "模型发布",
@@ -100,7 +100,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 
 ## 输出 发布公告 结构
 
-必须生成发布公告，保存为：`temp/<YYYY-MM-DD>/message.md`示例如下：
+必须生成发布公告，保存为：`temp/<YYYY-MM-DD>/message.md`，模板示例如下,不得随意加更多修饰,和模板字眼保持一致：
 
 ```markdown
 

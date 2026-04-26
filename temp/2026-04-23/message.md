@@ -1,18 +1,18 @@
-📰 IUX AI Daily 
+📰 IUX AI Daily
 | AI早报速递 | 2026-04-23 |
 ============================
 
-🥰 大家好，我是你们的助理哥，今天是 2026 年 4 月 23 日，农历三月初六
-   杭州以多云间晴为主，请留意当日实时预报。为您带来今日 AI 报道
+🥰 大家好，我是你们的助理哥，今天是 2026 年 4 月 23 日，为您带来今日 AI 报道（内容已根据当日 RSS 重新抓取与整理）。
 
-1. OpenAI 发布 GPT-5.5，并同步推进生物安全赏金与 Academy 版 Codex 指南。
-2. 通义开源 Qwen3.6-27B、腾讯混元 Hy3 preview、小米 MiMo-V2.5-Pro 等模型与评测齐发。
-3. 字节 Seed3D 2.0 强调 3D 生成几何与材质、产线向能力。
-4. Amazon Bedrock AgentCore 与 SageMaker 推理建议、Parakeet 多语种转写方案更新。
-5. Figma PLANTs 内测与 Governance+ 开发者日志，完善 API 治理面。
-6. 中文与英文渠道并谈 Workspace Agents、Privacy Filter 落地形态。
-7. 第三方对 Qwen3.6-27B、小米 MiMo 的基准与显存向解读。
+2026年4月23日
 
+1. OpenAI 发布 GPT-5.5，强调复杂任务与速度；同日发布生物安全漏洞赏金。
+2. Claude 上线日常应用连接器与托管智能体内置长期记忆。
+3. 澳大利亚国民银行（NAB）披露约 6000 名开发者统一使用 Cursor 做遗留改造。
+4. 腾讯混元开源 Hy3 preview；通义开源稠密多模态 Qwen3.6-27B。
+5. AWS：SageMaker 生成式推理推荐、Parakeet-TDT 多语转写流水、Bedrock AgentCore 智能体新能力。
+6. Figma：PLANTs 内测与 Governance+ 开发者日志。
+7. OpenAI Academy 多条 Codex 教程与「十大用例」；国内报道 ChatGPT Workspace Agents。
 
 ============================
-🔗 原文链接：https://ypvichi.github.io/iux-daily-blog//post/2026-04-23/
+🔗 原文链接：https://ypvichi.github.io/iux-daily-blog/post/2026-04-23/
