@@ -190,7 +190,14 @@ pre code {
     white-space: pre;
     word-wrap: normal
 }
-
+@media screen and (max-device-width: 800px)  {
+    .post-container {
+        width: 100% !important;
+        margin: 0 auto;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
 .post-container {
     float: none !important;
     width: 760px !important;
@@ -1442,6 +1449,11 @@ h3 {
 .video-container video {
     width: 180px;
     object-fit: cover;
+}
+@media screen and (max-device-width: 800px)  {
+    .anchor-container {
+        display: none !important;
+    }
 }
 .anchor-container {
     float: left;

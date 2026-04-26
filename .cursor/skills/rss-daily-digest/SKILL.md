@@ -107,6 +107,11 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 
 📰 IUX AI Daily 
 | AI早报速递 | 2026-04-20 |
+| 今日金价 |
+| xxx 元/克 |
+| 今日油价 |
+| 92#汽油：xxx 元/升 |
+| ... 元/升 |
 ============================
 🌷 <简短的充满诗意的开场白>。
 🥰 大家好，我是你们的助理哥，今天是<日期><星期>，<农历xxx>。
