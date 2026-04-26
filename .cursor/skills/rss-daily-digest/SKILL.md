@@ -100,7 +100,8 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 
 ## 输出 发布公告 结构
 
-必须生成发布公告，保存为：`temp/<YYYY-MM-DD>/message.md`，严格按模板生成，保持结构一致，如下：
+
+1. 必须生成发布公告，保存为：`temp/<YYYY-MM-DD>/message.md`，严格按模板生成，保持结构一致，如下：
 
 ```markdown
 
@@ -109,7 +110,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 ============================
 🌷 <简短的充满诗意的开场白>。
 🥰 大家好，我是你们的助理哥，今天是<日期><星期>，<农历xxx>。
-🌥️ <杭州天气预报>,为您带来今日AI报道。
+🌥️ <杭州天气预报(必须简短)>,为您带来今日AI报道。
 
 2026年4月16日
 
@@ -124,7 +125,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 🔗 原文链接：https://ypvichi.github.io/iux-daily-blog//post/2026-04-20/
 
 ```
-
+2. 杭州天气预报数据 调用`weather-query`查询
 
 ## 订阅源列表
 
