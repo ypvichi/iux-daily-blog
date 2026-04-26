@@ -1433,7 +1433,16 @@ h3 {
     top: 220px !important;
     position: relative;
 }
-
+.video-container {
+    float: right;
+    position: fixed !important;
+    bottom: 20px !important;
+    right:80px;
+}
+.video-container video {
+    width: 180px;
+    object-fit: cover;
+}
 .anchor-container {
     float: left;
     max-width: none;

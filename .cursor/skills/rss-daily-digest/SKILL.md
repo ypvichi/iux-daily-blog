@@ -79,6 +79,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 标题: 这届10后AI原住民,把小红书变成了“地下硅谷”
 类型: 产品应用
 来源: 干饭吃肉喝汤
+优先级:2
 日期: 2026-04-21 11:53:22
 链接: https://mp.weixin.qq.com/s?...
 摘要: AI的巨轮滚滚碾过,人们都在满头大汗地玩着一场名为不被淘汰的生存游戏...
@@ -95,6 +96,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 - 每条在摘要之后有 **图片**、**视频** 两行；各含最多 2 个 URL（`；` 分隔），无则 `（无）`；其余为标题/类型/来源/日期/链接/摘要 + 1 行分隔线。
 - 为空时使用占位：`（无标题）`、`（未知来源）`、`（无链接）`、`（无摘要）`；图片/视频行无资源时为 `（无）`。
 - 生成文件名统一为：`temp/<YYYY-MM-DD>/rss_articles.md`。
+- 根据优先级排列
 
 ## 输出 发布公告 结构
 

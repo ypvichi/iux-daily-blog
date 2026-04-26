@@ -25,11 +25,6 @@ except Exception:  # noqa: BLE001
 _BASE = "https://www.buildfastwithai.com"
 
 _CARD = re.compile(
-    r'(?is)<a class="group flex flex-col" href="(/blogs/(?!all)[a-z0-9][a-z0-9\-]*)">(.*?)</a>\s*'
-    r"(?=<a class=\"group flex flex-col\"|</div>\s*</div>\s*<div class=\"mb-20|</div></div></div><footer|\Z)",
-)
-# 若页面尾部结构变化，回退为宽松匹配（到下一个同结构卡片或 </div> 闭合前）
-_CARD_LOOSE = re.compile(
     r'(?is)<a class="group flex flex-col" href="(/blogs/(?!all)[a-z0-9][a-z0-9\-]*)">(.*?)</a>',
 )
 
@@ -119,49 +114,46 @@ def parse_feed(
 
     items: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for rx in (_CARD, _CARD_LOOSE):
-        for m in rx.finditer(listing_html):
-            path, inner = m.group(1), m.group(2) or ""
-            if not path.startswith("/blogs/") or path.rstrip("/") == "/blogs/all":
-                continue
-            h3m = _H3.search(inner)
-            title = _strip_tags(h3m.group(1) if h3m else "") or ""
-            if not title:
-                am = _IMG_ALT.search(inner)
-                title = unescape((am.group(1) or "").strip()) if am else ""
-            if not title:
-                title = "(无标题)"
+    for m in _CARD.finditer(listing_html):
+        path, inner = m.group(1), m.group(2) or ""
+        if not path.startswith("/blogs/") or path.rstrip("/") == "/blogs/all":
+            continue
+        h3m = _H3.search(inner)
+        title = _strip_tags(h3m.group(1) if h3m else "") or ""
+        if not title:
+            am = _IMG_ALT.search(inner)
+            title = unescape((am.group(1) or "").strip()) if am else ""
+        if not title:
+            title = "(无标题)"
 
-            dm = _DATE_P.search(inner)
-            d_raw = (dm.group(1) or "").strip() if dm else ""
-            pub_d = _parse_mdy_english(d_raw)
-            if pub_d is None:
-                continue
+        dm = _DATE_P.search(inner)
+        d_raw = (dm.group(1) or "").strip() if dm else ""
+        pub_d = _parse_mdy_english(d_raw)
+        if pub_d is None:
+            continue
 
-            published = datetime.combine(pub_d, time(12, 0), tzinfo=_TZ_SH)
-            cat_m = _CAT_SPAN.search(inner)
-            cat = _strip_tags(cat_m.group(1) or "") if cat_m else ""
-            if cat and cat.lower() not in title.lower():
-                summary = f"{cat} — {title}"[:500]
-            else:
-                summary = title[:500]
+        published = datetime.combine(pub_d, time(12, 0), tzinfo=_TZ_SH)
+        cat_m = _CAT_SPAN.search(inner)
+        cat = _strip_tags(cat_m.group(1) or "") if cat_m else ""
+        if cat and cat.lower() not in title.lower():
+            summary = f"{cat} — {title}"[:500]
+        else:
+            summary = title[:500]
 
-            link = urljoin(base + "/", path.lstrip("/"))
-            key = path
-            if key in seen:
-                continue
-            seen.add(key)
-            items.append(
-                {
-                    "source": source_name,
-                    "title": title,
-                    "link": link,
-                    "published": published,
-                    "summary": summary,
-                }
-            )
-        if items:
-            break
+        link = urljoin(base + "/", path.lstrip("/"))
+        key = path
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append(
+            {
+                "source": source_name,
+                "title": title,
+                "link": link,
+                "published": published,
+                "summary": summary,
+            }
+        )
 
     return items
 
