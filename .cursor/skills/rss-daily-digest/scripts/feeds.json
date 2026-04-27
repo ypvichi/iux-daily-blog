@@ -96,6 +96,12 @@
     "name": "AI公司",
     "feeds": [
       {
+        "name": "AI工具",
+        "url": "https://news.daheiai.com/changelog_rss.php",
+        "priority": 18,
+        "type":"AI工具"
+      },
+      {
         "name": "buildfastwithai_llms",
         "url": "https://www.buildfastwithai.com/blogs/all?category=1",
         "priority": 20,

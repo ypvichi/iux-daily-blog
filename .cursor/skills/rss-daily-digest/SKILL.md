@@ -32,7 +32,7 @@ step2. 内容翻译和中文润色（不要询问用户，直接开始）
 
 1. **中文表述**：将**每条标题、摘要** 都通过 翻译为自然、准确的 中文（链接 URL 不变；无摘要可省略「摘要」行）。
 
-step3. 输出 `articles` 和 `发布公告`
+step3. 输出 `articles`
 
 step4. 综合 `rss_articles.md` 的内容，生成最终完整的日报md `content/post/<YYYY-MM-DD>.md`
 
@@ -44,11 +44,16 @@ step4. 综合 `rss_articles.md` 的内容，生成最终完整的日报md `conte
 "设计生态",
 "开发生态",
 "产品应用",
+"AI工具"
 "技术与洞察",
 "行业生态",
 "前瞻与传闻",
 "要闻"
 ```
+
+step5. 输出 `发布公告`
+
+1. 最多7条比较重要的新闻标题，必须和`content/post/<YYYY-MM-DD>.md`中最终生成的 标题 保持一致
 
 ## 命令
 
@@ -107,19 +112,17 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 
 📰 IUX AI Daily 
 | AI早报速递 | 2026-04-20 |
-| 今日金价 |
-| xxx 元/克 |
-| 今日油价 |
+| 今日杭州油价 |
 | 92#汽油：xxx 元/升 |
 | ... 元/升 |
 ============================
 🌷 <简短的充满诗意的开场白>。
-🥰 大家好，我是你们的助理哥，今天是<日期><星期>，<农历xxx>。
+🥰 大家好，我是你们的助理子涵，今天是<日期><星期>，<农历xxx>。
 🌥️ <杭州天气预报(必须简短)>,为您带来今日AI报道。
 
 2026年4月16日
 
-<最多7条比较重要的新闻标题，必须和`content/post/<YYYY-MM-DD>.md`中最终生成的 标题 保持一致>
+<最多7条比较重要的新闻标题>
 1.  Google发布Gemini 3.1 Flash TTS模型，优化文本转语音性能。
 2.  xxx
 ...
@@ -131,6 +134,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 
 ```
 2. 杭州天气预报数据 调用`weather-query`查询，杭州的油价数据,调用`60s-gold-fuel`查询
+3. 绝对不允许显示金价
 
 ## 订阅源列表
 

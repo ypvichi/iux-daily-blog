@@ -1,11 +1,11 @@
 【1】
-标题: 我们的原则
+标题: Our principles
 类型: 要闻
 来源: OpenAI
 日期: 2026-04-27 00:00:00
 链接: https://openai.com/index/our-principles
 优先级: 18
-摘要: 我们的使命是确保通用人工智能（AGI）造福全人类。Sam Altman 阐述指导 OpenAI 工作的五项原则。
+摘要: Our mission is to ensure that AGI benefits all of humanity. Sam Altman shares five principles that guide our work.
 图片: （无）
 视频: （无）
 --------------------------------------------------------------
@@ -62,5 +62,27 @@
 优先级: 4
 摘要: 7年的专业研究，输给了一次「vibe mathing」。一个毫无高数背景的23岁年轻人，靠一段提示词，让ChatGPT在80分钟内破解了困扰人类60年的猜想。陶哲轩承认：我们第一步就走偏了。
 图片: https://img.36krcdn.com/hsossms/20260427/v2_c63a2d3deb46473184705542afb16fa1@5091053_oswg221682oswg1080oswg450_img_000?x-oss-process=image/format,jpg/interlace,1；https://img.36krcdn.com/hsossms/20260427/v2_995a5ea91a94440b9229577bef93bb0f@5091053_oswg39063oswg1080oswg163_img_000?x-oss-process=image/format,jpg/interlace,1
+视频: （无）
+--------------------------------------------------------------
+【7】
+标题: 元戎启行吸纳DeepSeek核心专家，全力推进大模型技术转型
+类型: 要闻
+来源: AIGC IZZI CN
+日期: 2026-04-27 09:40:25
+链接: https://aigc.izzi.cn/article/36116.html
+优先级: 5
+摘要: 在北京车展这一汽车行业盛会上，前DeepSeek多模态技术的核心研究员阮翀以元戎启行首席科学家的身份正式亮相，[…]
+图片: （无）
+视频: （无）
+--------------------------------------------------------------
+【8】
+标题: 英伟达吴新宙：自动驾驶迎来“ChatGPT时刻”，L4级大规模量产终将成为现实
+类型: 要闻
+来源: AIGC IZZI CN
+日期: 2026-04-27 09:44:55
+链接: https://aigc.izzi.cn/article/36117.html
+优先级: 5
+摘要: 在物理AI的广阔版图里，自动驾驶被视为最先能啃下的“硬骨头”。近期，英伟达全球副总裁吴新宙在北京的一场沟通会上[…]
+图片: （无）
 视频: （无）
 --------------------------------------------------------------
