@@ -119,7 +119,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 
 2026年4月16日
 
-<最多7条比较重要的新闻标题>
+<最多7条比较重要的新闻标题，必须和`content/post/<YYYY-MM-DD>.md`中最终生成的 标题 保持一致>
 1.  Google发布Gemini 3.1 Flash TTS模型，优化文本转语音性能。
 2.  xxx
 ...
