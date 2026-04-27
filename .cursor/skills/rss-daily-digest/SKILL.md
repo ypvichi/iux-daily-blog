@@ -130,7 +130,7 @@ python .cursor/skills/rss-daily-digest/scripts/fetch_rss_digest.py --skip-body-m
 🔗 原文链接：https://ypvichi.github.io/iux-daily-blog//post/2026-04-20/
 
 ```
-2. 杭州天气预报数据 调用`weather-query`查询
+2. 杭州天气预报数据 调用`weather-query`查询，杭州的油价数据,调用`60s-gold-fuel`查询
 
 ## 订阅源列表
 
